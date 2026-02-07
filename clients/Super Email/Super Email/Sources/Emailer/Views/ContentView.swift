@@ -38,7 +38,12 @@ public struct ContentView: View {
     @ViewBuilder
     private var contentColumn: some View {
         if let destination = appState.selectedView {
-            PlaceholderListView(destination: destination)
+            switch destination {
+            case .actionQueue:
+                ActionQueueView()
+            default:
+                PlaceholderListView(destination: destination)
+            }
         } else {
             Text("Select a view from the sidebar")
                 .foregroundStyle(.secondary)

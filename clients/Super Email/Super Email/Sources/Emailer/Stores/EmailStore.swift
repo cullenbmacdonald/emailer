@@ -18,6 +18,18 @@ public final class EmailStore {
     /// Emails in the All Inboxes view.
     public private(set) var allInboxes: [Email] = []
 
+    /// Whether we are performing the initial load for a view.
+    public private(set) var isLoading: Bool = false
+
+    /// Cursor for paginating the action queue.
+    public private(set) var actionQueueCursor: String?
+
+    /// Whether more action queue pages are available.
+    public private(set) var actionQueueHasMore: Bool = false
+
+    /// The currently loaded email detail.
+    public private(set) var selectedDetail: EmailDetail?
+
     /// Number of action queue items (for sidebar badge).
     public var actionQueueCount: Int { actionQueue.count }
 
@@ -65,6 +77,44 @@ public final class EmailStore {
         case .allInboxes:
             allInboxes = emails
         }
+    }
+
+    // MARK: - Loading
+
+    /// Set loading state (used by coordinator or view to track first load).
+    public func setLoading(_ loading: Bool) {
+        isLoading = loading
+    }
+
+    /// Update pagination state for the action queue.
+    public func setActionQueuePagination(cursor: String?, hasMore: Bool) {
+        actionQueueCursor = cursor
+        actionQueueHasMore = hasMore
+    }
+
+    /// Append a page of emails to the action queue (for pagination).
+    public func appendActionQueueEmails(_ emails: [Email]) {
+        let existingIDs = Set(actionQueue.map(\.id))
+        for email in emails where !existingIDs.contains(email.id) {
+            actionQueue.append(email)
+        }
+    }
+
+    /// Load the detail for a specific email. Clears the current detail first.
+    public func loadDetail(for emailID: String, using client: APIClient?) async {
+        selectedDetail = nil
+        guard let client else { return }
+        do {
+            let detail = try await client.fetchEmailDetail(id: emailID)
+            selectedDetail = detail
+        } catch {
+            // Detail load failed — leave selectedDetail as nil
+        }
+    }
+
+    /// Clear the selected detail.
+    public func clearDetail() {
+        selectedDetail = nil
     }
 
     // MARK: - Private
