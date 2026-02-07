@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Represents each navigable view in the sidebar.
-enum SidebarDestination: String, CaseIterable, Identifiable, Sendable {
+public enum SidebarDestination: String, CaseIterable, Identifiable, Sendable {
     case actionQueue
     case readingQueue
     case recommendations
@@ -9,9 +9,9 @@ enum SidebarDestination: String, CaseIterable, Identifiable, Sendable {
     case allInboxes
     case dailyDigest
 
-    var id: String { rawValue }
+    public var id: String { rawValue }
 
-    var title: String {
+    public var title: String {
         switch self {
         case .actionQueue: "Action Queue"
         case .readingQueue: "Reading Queue"
@@ -22,7 +22,7 @@ enum SidebarDestination: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var iconName: String {
+    public var iconName: String {
         switch self {
         case .actionQueue: "tray.and.arrow.down.fill"
         case .readingQueue: "book.fill"
@@ -34,12 +34,12 @@ enum SidebarDestination: String, CaseIterable, Identifiable, Sendable {
     }
 
     /// The main five views shown above the separator in the sidebar.
-    static var mainViews: [SidebarDestination] {
+    public static var mainViews: [SidebarDestination] {
         [.actionQueue, .readingQueue, .recommendations, .filtered, .allInboxes]
     }
 
     /// Whether this destination shows in the group below the separator.
-    var isBelowSeparator: Bool {
+    public var isBelowSeparator: Bool {
         self == .dailyDigest
     }
 }

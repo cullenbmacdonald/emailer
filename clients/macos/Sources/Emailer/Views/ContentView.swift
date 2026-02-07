@@ -1,4 +1,5 @@
 import SwiftUI
+import EmailClientKit
 
 /// The root view of the macOS app.
 ///
@@ -7,24 +8,23 @@ import SwiftUI
 /// - Content: email list / recommendations / digest
 /// - Detail: email body / recommendation detail
 public struct ContentView: View {
-    @State private var selectedDestination: SidebarDestination? = .actionQueue
-
-    // Placeholder counts until stores are wired up
-    @State private var actionQueueCount: Int = 0
-    @State private var filteredCount: Int = 0
-    @State private var hasNewDigest: Bool = false
+    @Environment(AppState.self) private var appState
+    @Environment(EmailStore.self) private var emailStore
+    @Environment(DigestStore.self) private var digestStore
 
     public init() {}
 
     public var body: some View {
+        @Bindable var state = appState
+
         NavigationSplitView(
             columnVisibility: .constant(.all)
         ) {
             SidebarView(
-                selection: $selectedDestination,
-                actionQueueCount: actionQueueCount,
-                filteredCount: filteredCount,
-                hasNewDigest: hasNewDigest
+                selection: $state.selectedView,
+                actionQueueCount: emailStore.actionQueueCount,
+                filteredCount: emailStore.filteredBorderlineCount,
+                hasNewDigest: digestStore.hasNewDigest
             )
             .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
         } content: {
@@ -37,7 +37,7 @@ public struct ContentView: View {
 
     @ViewBuilder
     private var contentColumn: some View {
-        if let destination = selectedDestination {
+        if let destination = appState.selectedView {
             PlaceholderListView(destination: destination)
         } else {
             Text("Select a view from the sidebar")
