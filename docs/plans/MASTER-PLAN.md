@@ -6,6 +6,20 @@ This document defines the phased implementation plan for the email client. It es
 
 ---
 
+## Project Template
+
+Scaffolded from [`github.com/cullenbmacdonald/project-template`](https://github.com/cullenbmacdonald/project-template) (Go backend variant). This gives us:
+- Unified Makefile system (`make lint`, `make test`, `make build` across all components)
+- Docker Compose with PostgreSQL 16 + Caddy reverse proxy (auto-TLS)
+- Multi-stage Docker builds (CGO_ENABLED=0 static Go binary)
+- Git hooks (pre-commit: fmt + lint, pre-push: test + build)
+- GitHub Actions CI (path-filtered per component)
+- Cloud-init server provisioning (fail2ban, UFW, deploy user)
+- Health endpoint pattern with build info injection
+- Deploy script (rsync + SSH + docker-compose)
+
+---
+
 ## Architecture Summary
 
 ```
@@ -71,12 +85,12 @@ Once specs are complete, three agents work simultaneously on foundational scaffo
 │   Branch: server/     │  │   Branch: macos/      │  │   Branch: ios/       │
 │   foundation          │  │   foundation          │  │   foundation         │
 │                       │  │                       │  │                      │
-│ - Project scaffolding │  │ - Xcode project setup │  │ - Xcode project setup│
-│ - PostgreSQL schema + │  │ - EmailClientKit pkg  │  │ - Shared pkg import  │
-│   migrations          │  │ - API client + models │  │ - API client + models│
-│ - Config loading      │  │ - WebSocket manager   │  │ - WebSocket manager  │
-│ - Health endpoint     │  │ - App shell + nav     │  │ - App shell + tabs   │
-│ - Linting + CI setup  │  │ - Linting + CI setup  │  │ - Linting + CI setup │
+│ - Scaffold from       │  │ - Xcode project setup │  │ - Xcode project setup│
+│   project-template    │  │ - EmailClientKit pkg  │  │ - Shared pkg import  │
+│ - PostgreSQL schema + │  │ - API client + models │  │ - API client + models│
+│   migrations (pgx)    │  │ - WebSocket manager   │  │ - WebSocket manager  │
+│ - Config + health EP  │  │ - App shell + nav     │  │ - App shell + tabs   │
+│ - Docker + Makefile   │  │ - Linting + CI setup  │  │ - Linting + CI setup │
 │ - Test infrastructure │  │ - Test infrastructure │  │ - Test infrastructure│
 └──────────────────────┘  └──────────────────────┘  └──────────────────────┘
          │                         │                         │
@@ -204,10 +218,10 @@ Every agent must satisfy these before committing:
 
 ### Go Server
 ```bash
-go build ./...          # compiles
-go test ./...           # all tests pass
-go vet ./...            # no vet warnings
-golangci-lint run       # linter passes
+make fmt                # auto-fix formatting
+make lint               # golangci-lint + go vet
+make test               # all tests pass (with -race)
+make build              # compiles static binary
 ```
 
 ### macOS / iOS Apps

@@ -25,6 +25,23 @@ Reference documents:
 - `/docs/brainstorms/go-server-architecture.md` — Architecture reference
 - `/docs/brainstorms/email-protocols.md` — IMAP/SMTP protocol details
 
+## Project Template Conventions
+
+This project is scaffolded from `github.com/cullenbmacdonald/project-template`. Follow these conventions:
+
+- **Makefile interface**: The root and `backend/` Makefiles expose `make fmt`, `make lint`, `make test`, `make build`, `make run`, `make clean`. Always use these targets — do not run tools directly.
+- **Health endpoint**: `/health` returns `{"status": "ok", "version": "...", "commit_hash": "...", "build_time": "..."}`. Version info injected via ldflags at build time.
+- **API versioning**: All endpoints under `/api/v1/`.
+- **Docker**: Multi-stage build, `CGO_ENABLED=0` static binary, non-root `app` user (UID 1000). Binary at `bin/server`.
+- **PostgreSQL 16**: Via docker-compose. Connection string from `DATABASE_URL` env var.
+- **Caddy**: Reverse proxy, auto-TLS, `/api/*` and `/health` to backend, SPA fallback for frontend.
+- **Git hooks**: Pre-commit runs `make fmt` + `make lint` on staged backend files. Pre-push runs `make test` + `make build`.
+- **CI**: GitHub Actions, path-filtered (only triggers on `backend/**` changes). Jobs: lint, test, build.
+- **Build info**: `VERSION`, `COMMIT_HASH`, `BUILD_TIME` injected via `-ldflags` at compile time.
+- **Port**: Default 8080, respects `PORT` env var.
+
+When in doubt, check the Makefile — it's the source of truth for how to build, test, and run.
+
 ## Your Approach
 
 1. **Read the Task**
@@ -79,11 +96,11 @@ Reference documents:
 
 ## Verification Checklist
 
-Before every commit:
-- [ ] `go build ./...` succeeds
-- [ ] `go test ./...` passes (all tests)
-- [ ] `go vet ./...` passes
-- [ ] `golangci-lint run` passes
+Before every commit, run the Makefile targets:
+- [ ] `make build` succeeds (compiles, static binary)
+- [ ] `make test` passes (all tests, race detector on)
+- [ ] `make lint` passes (golangci-lint + go vet)
+- [ ] `make fmt` has been run (gofmt, auto-fixes formatting)
 - [ ] No TODO comments left without a tracking reference
 - [ ] No hardcoded secrets, passwords, or API keys
 - [ ] No `fmt.Println` debugging left in code
