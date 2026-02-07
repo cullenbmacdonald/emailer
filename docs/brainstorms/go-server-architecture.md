@@ -7,6 +7,10 @@ Research notes for the Go server that runs on the Mac Mini hub. This server hand
 
 ---
 
+> **⚠️ Architecture Update**: This document references SQLite extensively. The database has been changed to **PostgreSQL** (via `pgx` pure-Go driver, no CGO). Reasons: no CGO dependency, better full-text search, pgvector support for future RAG/embeddings. All SQLite-specific references (WAL mode, FTS5, go-sqlite3, SQLCipher) should be read as historical research. The schema designs and query patterns remain conceptually valid — translate to PostgreSQL equivalents (`tsvector`/`tsquery` for full-text search, `pgxpool` for connection pooling). Also: references to "Mac Mini" are historical — the server is deployment-agnostic.
+
+---
+
 ## Table of Contents
 
 1. [Project Structure](#1-project-structure)

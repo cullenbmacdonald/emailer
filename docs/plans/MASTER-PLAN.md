@@ -9,10 +9,10 @@ This document defines the phased implementation plan for the email client. It es
 ## Architecture Summary
 
 ```
-Mac Mini (Go Server)
+Go Server
 ├── IMAP connections (go-imap v2) → 3 email accounts
 ├── Classification pipeline (rules + Ollama LLM)
-├── SQLite database (go-sqlite3 + FTS5)
+├── PostgreSQL database (pgx driver, no CGO) + pgvector
 ├── REST API (chi router) + WebSocket (gorilla/websocket)
 ├── Background jobs (digest, snooze, cleanup)
 └── Ollama (companion service for LLM inference)
@@ -20,7 +20,7 @@ Mac Mini (Go Server)
 Clients (thin API consumers)
 ├── macOS app (SwiftUI, keyboard-first)
 ├── iOS app (SwiftUI, touch-first)
-└── Web app (React/Svelte, later)
+└── Web app (React or Svelte, defering decision to later)
 ```
 
 ---
@@ -72,7 +72,7 @@ Once specs are complete, three agents work simultaneously on foundational scaffo
 │   foundation          │  │   foundation          │  │   foundation         │
 │                       │  │                       │  │                      │
 │ - Project scaffolding │  │ - Xcode project setup │  │ - Xcode project setup│
-│ - SQLite schema +     │  │ - EmailClientKit pkg  │  │ - Shared pkg import  │
+│ - PostgreSQL schema + │  │ - EmailClientKit pkg  │  │ - Shared pkg import  │
 │   migrations          │  │ - API client + models │  │ - API client + models│
 │ - Config loading      │  │ - WebSocket manager   │  │ - WebSocket manager  │
 │ - Health endpoint     │  │ - App shell + nav     │  │ - App shell + tabs   │
@@ -140,7 +140,7 @@ Each agent implements the core email flows for their component.
 │ - Filtered API        │  │                       │  │                      │
 │                       │  │ Milestone: All Inboxes│  │ Milestone: All In.   │
 │ Milestone: Search     │  │ - Unified list view   │  │ - Unified list view  │
-│ - FTS5 search API     │  │ - Search integration  │  │ - Search integration │
+│ - PG full-text search │  │ - Search integration  │  │ - Search integration │
 │                       │  │                       │  │                      │
 │ Milestone: Multi-user │  │ Milestone: Offline    │  │ Milestone: Offline   │
 │ - Cloud LLM providers │  │ - Caching layer       │  │ - Caching layer      │
