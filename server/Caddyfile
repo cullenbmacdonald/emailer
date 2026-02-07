@@ -1,0 +1,24 @@
+{
+	# Local development: disable automatic HTTPS
+	auto_https off
+}
+
+:80 {
+	# Health endpoint
+	handle /health {
+		reverse_proxy server:8080
+	}
+
+	# API endpoints
+	handle /api/* {
+		reverse_proxy server:8080
+	}
+
+	# WebSocket endpoint
+	handle /ws {
+		reverse_proxy server:8080
+	}
+
+	# Fallback: return 404 for anything else
+	respond "Not Found" 404
+}
