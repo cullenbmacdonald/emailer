@@ -1,0 +1,30 @@
+# Version control
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Build artifacts
+bin/
+
+# Test files
+*_test.go
+
+# IDE and OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Config with secrets
+config.yaml
+.env
+
+# Docker files (no need to copy into build context)
+docker-compose.yml
+Caddyfile

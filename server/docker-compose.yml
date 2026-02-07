@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-emailer}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-emailer}
+      POSTGRES_DB: ${POSTGRES_DB:-emailer}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-emailer}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+        COMMIT_HASH: ${COMMIT_HASH:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
+    restart: unless-stopped
+    environment:
+      EMAILER_PORT: "8080"
+      EMAILER_AUTH_TOKEN: ${EMAILER_AUTH_TOKEN:-change-me-to-a-secret}
+      EMAILER_DB_DSN: "postgres://${POSTGRES_USER:-emailer}:${POSTGRES_PASSWORD:-emailer}@postgres:5432/${POSTGRES_DB:-emailer}?sslmode=disable"
+      EMAILER_LOG_LEVEL: ${EMAILER_LOG_LEVEL:-info}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - server
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
