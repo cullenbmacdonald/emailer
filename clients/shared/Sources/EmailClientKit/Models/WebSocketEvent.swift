@@ -169,6 +169,7 @@ extension WebSocketEvent: Codable {
         case timestamp
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(WebSocketEventType.self, forKey: .type)
@@ -214,6 +215,7 @@ extension WebSocketEvent: Codable {
         }
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(type, forKey: .type)

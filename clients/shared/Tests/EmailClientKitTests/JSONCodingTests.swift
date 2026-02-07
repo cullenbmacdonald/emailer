@@ -47,7 +47,7 @@ struct JSONCodingTests {
 
         let sample = Sample(accountId: "abc", isRead: true)
         let data = try JSONEncoder.apiEncoder.encode(sample)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(json["account_id"] as? String == "abc")
         #expect(json["is_read"] as? Bool == true)
     }

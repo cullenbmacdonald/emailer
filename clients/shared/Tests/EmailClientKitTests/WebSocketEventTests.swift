@@ -3,6 +3,7 @@ import Testing
 @testable import EmailClientKit
 
 @Suite("WebSocketEvent Models")
+// swiftlint:disable:next type_body_length
 struct WebSocketEventTests {
     @Test("WebSocketEventType raw values match API spec")
     func eventTypeRawValues() {

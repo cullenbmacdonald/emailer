@@ -40,6 +40,7 @@ struct DailyDigestTests {
     }
 
     @Test("DailyDigest decodes from API JSON")
+    // swiftlint:disable:next function_body_length
     func decodeFromAPI() throws {
         let json = """
         {

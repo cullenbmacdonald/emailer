@@ -29,7 +29,7 @@ struct ComposeTests {
             inReplyTo: "email-1"
         )
         let data = try JSONEncoder.apiEncoder.encode(request)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(json["account_id"] as? String == "acc-1")
         #expect(json["in_reply_to"] as? String == "email-1")
     }

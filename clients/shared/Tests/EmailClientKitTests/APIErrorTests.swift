@@ -51,14 +51,41 @@ struct APIErrorTests {
         #expect(error.message == "The 'view' query parameter is required")
     }
 
+    @Test("unauthorized provides description")
+    func unauthorizedDescription() {
+        let error = APIError.unauthorized
+        #expect(error.errorDescription == "Unauthorized: invalid or missing authentication token")
+    }
+
+    @Test("notFound provides description")
+    func notFoundDescription() {
+        let error = APIError.notFound("Email not found")
+        #expect(error.errorDescription == "Email not found")
+
+        let errorNoMessage = APIError.notFound(nil)
+        #expect(errorNoMessage.errorDescription == "Resource not found")
+    }
+
+    @Test("conflict provides description")
+    func conflictDescription() {
+        let error = APIError.conflict("VIP sender already exists")
+        #expect(error.errorDescription == "VIP sender already exists")
+    }
+
+    @Test("validationError provides description")
+    func validationErrorDescription() {
+        let error = APIError.validationError("Query too short")
+        #expect(error.errorDescription == "Query too short")
+    }
+
     @Test("APIError conforms to Equatable")
     func equatable() {
-        let a = APIError.serverUnreachable
-        let b = APIError.serverUnreachable
-        #expect(a == b)
+        let error1 = APIError.serverUnreachable
+        let error2 = APIError.serverUnreachable
+        #expect(error1 == error2)
 
-        let c = APIError.httpError(statusCode: 404, serverError: nil)
-        let d = APIError.httpError(statusCode: 404, serverError: nil)
-        #expect(c == d)
+        let httpError1 = APIError.httpError(statusCode: 404, serverError: nil)
+        let httpError2 = APIError.httpError(statusCode: 404, serverError: nil)
+        #expect(httpError1 == httpError2)
     }
 }

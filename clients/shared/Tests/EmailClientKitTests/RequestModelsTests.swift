@@ -8,7 +8,7 @@ struct RequestModelsTests {
     func emailUpdateEncoding() throws {
         let request = EmailUpdateRequest(isRead: true, isArchived: false, readProgress: 0.5)
         let data = try JSONEncoder.apiEncoder.encode(request)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(json["is_read"] as? Bool == true)
         #expect(json["is_archived"] as? Bool == false)
         #expect(json["read_progress"] as? Double == 0.5)
@@ -18,7 +18,7 @@ struct RequestModelsTests {
     func reclassifyEncoding() throws {
         let request = ReclassifyRequest(newClassification: .newsletter, confirm: true)
         let data = try JSONEncoder.apiEncoder.encode(request)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(json["new_classification"] as? String == "newsletter")
         #expect(json["confirm"] as? Bool == true)
     }
@@ -28,8 +28,8 @@ struct RequestModelsTests {
         let date = ISO8601DateFormatter().date(from: "2026-02-08T09:00:00Z")!
         let request = SnoozeRequest(returnAt: date)
         let data = try JSONEncoder.apiEncoder.encode(request)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-        #expect(json["return_at"] as? String != nil)
+        let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(json["return_at"] is String)
     }
 
     @Test("RecommendationCreateRequest round-trip")
