@@ -1,4 +1,4 @@
-.PHONY: build-shared build-macos build-ios test test-shared test-macos lint clean
+.PHONY: build-shared build-macos build-ios test test-shared test-macos test-ios lint clean
 
 # Build targets
 build-shared:
@@ -7,8 +7,8 @@ build-shared:
 build-macos: build-shared
 	cd macos && swift build
 
-build-ios:
-	@echo "iOS target is a placeholder -- no build configured yet"
+build-ios: build-shared
+	cd ios && swift build
 
 # Test targets
 test-shared:
@@ -17,7 +17,10 @@ test-shared:
 test-macos:
 	cd macos && swift test
 
-test: test-shared test-macos
+test-ios:
+	cd ios && swift test
+
+test: test-shared test-macos test-ios
 
 # Lint
 lint:
@@ -27,3 +30,4 @@ lint:
 clean:
 	cd shared && swift package clean
 	cd macos && swift package clean
+	cd ios && swift package clean
