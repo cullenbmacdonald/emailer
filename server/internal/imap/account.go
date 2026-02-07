@@ -71,6 +71,13 @@ func NewAccount(acctCfg config.AccountConfig, logger zerolog.Logger) (*Account, 
 		return nil, fmt.Errorf("provider config for %s: %w", acctCfg.Name, err)
 	}
 
+	// Auto-detect auth method: if app_password is set and no OAuth credentials
+	// are configured, use plain auth even if the provider defaults to OAuth2.
+	// This lets Gmail users skip OAuth by using an app password.
+	if acctCfg.AppPassword != "" && acctCfg.OAuth.ClientID == "" && acctCfg.OAuth.ClientSecret == "" {
+		provCfg.AuthMethod = AuthMethodPlain
+	}
+
 	// Override provider defaults with explicit config if provided.
 	if acctCfg.IMAP.Host != "" {
 		provCfg.IMAPHost = acctCfg.IMAP.Host

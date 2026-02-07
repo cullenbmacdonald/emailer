@@ -67,6 +67,25 @@ func TestNewAccount_Gmail(t *testing.T) {
 	}
 }
 
+func TestNewAccount_Gmail_AppPassword(t *testing.T) {
+	cfg := testAccountConfig(ProviderGmail)
+	cfg.OAuth.ClientID = ""
+	cfg.OAuth.ClientSecret = ""
+	// AppPassword is already set by testAccountConfig.
+
+	acct, err := NewAccount(cfg, zerolog.Nop())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if acct.provider.AuthMethod != AuthMethodPlain {
+		t.Errorf("expected %s auth for Gmail with app password, got %s", AuthMethodPlain, acct.provider.AuthMethod)
+	}
+	if acct.tokenMgr != nil {
+		t.Error("expected no token manager for Gmail with app password")
+	}
+}
+
 func TestNewAccount_Microsoft(t *testing.T) {
 	acct, err := NewAccount(testAccountConfig(ProviderMicrosoft), zerolog.Nop())
 	if err != nil {

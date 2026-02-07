@@ -25,6 +25,7 @@ database:
 # Email Accounts
 # --------------------------------------------------------------------------
 accounts:
+  # Gmail with OAuth (default)
   - id: "personal-gmail"
     name: "Personal Gmail"
     email: "you@gmail.com"
@@ -41,6 +42,16 @@ accounts:
       client_id: "your-client-id.apps.googleusercontent.com"
       client_secret: "your-client-secret"
       token_file: "~/.config/emailer/gmail-token.json"
+
+  # Gmail with app password (skips OAuth — just set app_password, omit oauth)
+  # Generate at https://myaccount.google.com/apppasswords
+  #- id: "personal-gmail"
+  #  name: "Personal Gmail"
+  #  email: "you@gmail.com"
+  #  provider: "gmail"
+  #  type: "personal"
+  #  color: "#34A853"
+  #  app_password: "abcd efgh ijkl mnop"
 
   - id: "personal-icloud"
     name: "iCloud"
