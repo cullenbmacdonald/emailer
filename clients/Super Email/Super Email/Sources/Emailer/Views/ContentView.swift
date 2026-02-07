@@ -52,7 +52,34 @@ public struct ContentView: View {
 
     @ViewBuilder
     private var detailColumn: some View {
-        DetailPlaceholderView()
+        EmailDetailView { action, detail in
+            handleDetailAction(action, detail: detail)
+        }
+        .onChange(of: appState.selectedEmailID) { _, newID in
+            if let id = newID {
+                Task {
+                    await emailStore.loadDetail(for: id, using: nil)
+                }
+            } else {
+                emailStore.clearDetail()
+            }
+        }
+    }
+
+    private func handleDetailAction(_ action: DetailAction, detail: EmailDetail) {
+        // Toolbar actions will be wired to stores in subsequent tasks (M-2.4, M-2.5, M-2.6)
+        switch action {
+        case .reply, .replyAll, .forward:
+            break // Compose (M-2.6)
+        case .archive:
+            break // Archive with undo (M-2.4)
+        case .snooze:
+            break // Snooze picker (M-2.5)
+        case .move:
+            break // Reclassify
+        case .trash:
+            break // Delete
+        }
     }
 }
 

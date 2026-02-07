@@ -100,12 +100,18 @@ public final class EmailStore {
     }
 
     /// Load the detail for a specific email. Clears the current detail first.
+    /// Automatically marks the email as read upon successful load.
     public func loadDetail(for emailID: String, using client: APIClient?) async {
         selectedDetail = nil
         guard let client else { return }
         do {
             let detail = try await client.fetchEmailDetail(id: emailID)
             selectedDetail = detail
+
+            // Mark as read if unread
+            if !detail.email.isRead {
+                _ = try? await client.updateEmail(id: emailID, isRead: true)
+            }
         } catch {
             // Detail load failed -- leave selectedDetail as nil
         }
