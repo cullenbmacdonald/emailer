@@ -1,0 +1,2384 @@
+openapi: "3.1.0"
+info:
+  title: Emailer API
+  version: "1.0.0"
+  description: |
+    REST + WebSocket API for the Emailer personal email client.
+
+    The Go server handles IMAP email fetching, LLM-based classification (Ollama locally,
+    swappable to Anthropic/OpenAI), recommendation extraction from newsletters, daily
+    digest generation, snooze scheduling, and SMTP sending.
+
+    Clients (macOS, iOS, future web) are thin API consumers -- they display data and
+    send user actions to the server.
+
+    ## Authentication
+
+    All endpoints (except `/health`) require a Bearer token in the `Authorization` header:
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    For WebSocket connections, pass the token as a query parameter:
+    ```
+    ws://host:port/api/v1/ws?token=<token>
+    ```
+
+    The token is configured in the server's `config.yaml`. For single-user deployments,
+    this is a static API key. For future multi-user support, this will be replaced with
+    JWT tokens.
+
+    ## Pagination
+
+    All list endpoints use cursor-based pagination. Responses include a `next_cursor`
+    field when more results are available. Pass the cursor value as the `cursor` query
+    parameter to fetch the next page.
+
+    Cursor values are opaque strings -- clients must not parse or construct them.
+
+    ## Timestamps
+
+    All timestamps are UTC, ISO 8601 format: `2026-02-07T14:30:00Z`
+
+    ## IDs
+
+    All IDs are UUID v4 strings: `550e8400-e29b-41d4-a716-446655440000`
+
+    ## Errors
+
+    All error responses use a consistent format with a machine-readable `code` and
+    human-readable `message`. See the Error schema.
+
+    ## WebSocket Events
+
+    A single WebSocket endpoint at `/api/v1/ws` pushes real-time events to connected
+    clients. Events are JSON objects with `type` and `payload` fields.
+
+    Supported event types (server to client):
+    - `email.new` -- New email arrived and classified
+    - `email.updated` -- Email metadata changed (read, archived, labels)
+    - `email.deleted` -- Email permanently deleted
+    - `classification.changed` -- Email classification updated (override or reprocess)
+    - `snooze.created` -- Email was snoozed
+    - `snooze.returned` -- Snoozed email returned to queue
+    - `snooze.cancelled` -- Snooze was cancelled
+    - `recommendation.new` -- New recommendation extracted from newsletter
+    - `recommendation.updated` -- Recommendation status changed
+    - `digest.available` -- New daily digest generated
+    - `account.status` -- Account connection status changed (online/offline/error)
+
+    Supported event types (client to server):
+    - `ping` -- Client heartbeat (server responds with `pong`)
+
+    The WebSocket connection enhances the experience with real-time updates but is not
+    required. Clients can function with REST-only by polling.
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://emailer.example.com
+    description: Production server (via Tailscale/Caddy)
+
+tags:
+  - name: Emails
+    description: Email listing, detail, and actions
+  - name: Search
+    description: Full-text email search
+  - name: Compose
+    description: Email composition and sending
+  - name: Recommendations
+    description: Extracted recommendations from newsletters
+  - name: Digests
+    description: Daily morning and evening digests
+  - name: Accounts
+    description: Email account information
+  - name: VIP
+    description: VIP sender management
+  - name: System
+    description: Health check and system status
+
+paths:
+  # ==========================================================================
+  # EMAILS
+  # ==========================================================================
+  /api/v1/emails:
+    get:
+      tags: [Emails]
+      operationId: listEmails
+      summary: List emails with view-based filtering
+      description: |
+        Returns a paginated list of emails filtered by view (queue). This is the
+        primary endpoint that powers the Action Queue, Reading Queue, Filtered,
+        and All Inboxes views.
+
+        Views map to classifications:
+        - `action_queue` -- emails classified as `action_required`
+        - `reading_queue` -- emails classified as `newsletter`
+        - `filtered` -- emails classified as `filtered`
+        - `all_inboxes` -- all emails regardless of classification
+
+        For `action_queue`, results are ordered with snoozed-returned items first
+        (sorted by return_at DESC), then new items (sorted by received_at DESC).
+
+        For `reading_queue`, unread items appear first (by received_at DESC),
+        then partially-read items (by last_read_at DESC).
+
+        For `filtered`, borderline items (confidence < 0.80) appear first,
+        then standard items (by received_at DESC).
+
+        For `all_inboxes`, all emails sorted by received_at DESC.
+      parameters:
+        - name: view
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [action_queue, reading_queue, filtered, all_inboxes]
+          description: The view/queue to fetch emails for.
+        - $ref: "#/components/parameters/AccountFilter"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: is_read
+          in: query
+          schema:
+            type: boolean
+          description: Filter by read state. Omit to include both.
+        - name: is_archived
+          in: query
+          schema:
+            type: boolean
+          description: Filter by archived state. Omit to include both. For `all_inboxes`, defaults to including archived.
+      responses:
+        "200":
+          description: Paginated list of emails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/emails/{id}:
+    get:
+      tags: [Emails]
+      operationId: getEmail
+      summary: Get email detail including full body
+      description: |
+        Returns the full email including HTML body, text body, attachments list,
+        and classification metadata. Used when a user selects an email in the list
+        to view in the detail column.
+
+        The HTML body is sanitized server-side (tracking pixels removed, external
+        resources proxied, JavaScript stripped). For newsletter emails, the server
+        also strips newsletter chrome (unsubscribe footers, social buttons, etc.)
+        when a `reader_mode=true` query parameter is passed.
+      parameters:
+        - $ref: "#/components/parameters/EmailId"
+        - name: reader_mode
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: |
+            When true, returns a cleaned-up HTML body optimized for reading
+            (newsletter chrome stripped). Used by the Reading Queue reader view.
+      responses:
+        "200":
+          description: Full email detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [Emails]
+      operationId: updateEmail
+      summary: Update email metadata
+      description: |
+        Update mutable email properties: read state, archived state, labels.
+        Supports partial updates -- only included fields are changed.
+
+        This endpoint is used for:
+        - Marking emails read/unread
+        - Archiving/unarchiving emails
+        - Updating labels
+
+        For classification changes, use POST /api/v1/emails/{id}/reclassify.
+        For snooze, use POST /api/v1/emails/{id}/snooze.
+      parameters:
+        - $ref: "#/components/parameters/EmailId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailUpdateRequest"
+      responses:
+        "200":
+          description: Updated email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Emails]
+      operationId: deleteEmail
+      summary: Permanently delete an email
+      description: |
+        Permanently deletes an email from the server and marks it for deletion
+        on the IMAP server. This is irreversible.
+
+        Used primarily from the Filtered view for confirmed spam.
+      parameters:
+        - $ref: "#/components/parameters/EmailId"
+      responses:
+        "204":
+          description: Email deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/emails/{id}/reclassify:
+    post:
+      tags: [Emails]
+      operationId: reclassifyEmail
+      summary: Override email classification
+      description: |
+        Changes the classification of an email and records a training signal.
+        This is the primary mechanism for correcting AI classification mistakes.
+
+        Used when:
+        - Rescuing a false positive from the Filtered view ("Not Spam")
+        - Moving an email from Action Queue to Reading Queue
+        - Confirming a filtered item is indeed spam
+
+        The server records the override as a training signal to improve future
+        classification accuracy. The `confirm` flag indicates whether the user
+        is confirming the current classification (rather than changing it).
+      parameters:
+        - $ref: "#/components/parameters/EmailId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReclassifyRequest"
+      responses:
+        "200":
+          description: Updated email with new classification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/emails/{id}/snooze:
+    post:
+      tags: [Emails]
+      operationId: snoozeEmail
+      summary: Snooze an email
+      description: |
+        Snoozes an email until the specified time. The email is removed from
+        the active queue and will return to the top of the Action Queue when
+        the snooze timer expires.
+
+        Multi-snooze is allowed. The snooze_count is incremented each time.
+        Clients display the snooze count when >= 2 ("snoozed 3x").
+
+        The server fires a `snooze.created` WebSocket event and later a
+        `snooze.returned` event when the timer expires.
+      parameters:
+        - $ref: "#/components/parameters/EmailId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SnoozeRequest"
+      responses:
+        "200":
+          description: Snooze created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SnoozeState"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Emails]
+      operationId: unsnoozeEmail
+      summary: Cancel an active snooze
+      description: |
+        Cancels the active snooze on an email. The email immediately returns
+        to the Action Queue. The snooze_count is NOT decremented (it tracks
+        total snoozes historically).
+
+        The server fires a `snooze.cancelled` WebSocket event.
+      parameters:
+        - $ref: "#/components/parameters/EmailId"
+      responses:
+        "200":
+          description: Snooze cancelled, email returned to queue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: No active snooze on this email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/emails/{id}/attachments/{attachment_id}:
+    get:
+      tags: [Emails]
+      operationId: downloadAttachment
+      summary: Download an email attachment
+      description: |
+        Returns the raw attachment file with appropriate Content-Type and
+        Content-Disposition headers. The `download_url` field on Attachment
+        objects points to this endpoint.
+
+        The response is the raw file bytes, not JSON. Clients should use
+        the Content-Type header to determine how to handle the file and
+        the Content-Disposition header for the filename.
+      parameters:
+        - $ref: "#/components/parameters/EmailId"
+        - name: attachment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Attachment ID
+      responses:
+        "200":
+          description: Raw attachment file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Type:
+              description: MIME type of the attachment (e.g., application/pdf, image/png)
+              schema:
+                type: string
+            Content-Disposition:
+              description: 'Attachment disposition with filename (e.g., attachment; filename="report.pdf")'
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ==========================================================================
+  # SEARCH
+  # ==========================================================================
+  /api/v1/search:
+    get:
+      tags: [Search]
+      operationId: searchEmails
+      summary: Full-text search across all emails
+      description: |
+        Performs a full-text search across email subjects, sender names/addresses,
+        and body text using PostgreSQL full-text search (tsvector/tsquery).
+
+        Results are ranked by relevance. The search respects the account filter.
+        Query term highlights are returned in the `highlight_snippet` field.
+
+        Minimum query length: 2 characters.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Search query string.
+        - $ref: "#/components/parameters/AccountFilter"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ==========================================================================
+  # COMPOSE
+  # ==========================================================================
+  /api/v1/compose/send:
+    post:
+      tags: [Compose]
+      operationId: sendEmail
+      summary: Send an email via SMTP
+      description: |
+        Composes and sends an email through the specified account's SMTP server.
+        Supports reply, reply-all, forward, and new compose.
+
+        The `account_id` determines which SMTP server and sender address to use.
+        If replying, provide `in_reply_to` with the original email ID so the
+        server can set proper threading headers (In-Reply-To, References).
+
+        The server handles saving the sent copy to the IMAP Sent folder
+        (except Gmail, which auto-saves).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComposeRequest"
+      responses:
+        "200":
+          description: Email sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComposeSendResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Invalid recipient or compose data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/compose/drafts:
+    get:
+      tags: [Compose]
+      operationId: listDrafts
+      summary: List drafts
+      description: |
+        Returns a paginated list of drafts, ordered by `updated_at` DESC
+        (most recently edited first). Used to populate the drafts list in
+        the compose UI.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Paginated list of drafts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DraftListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Compose]
+      operationId: createDraft
+      summary: Save a new draft
+      description: |
+        Saves a draft email. The draft is stored both locally and synced to the
+        IMAP Drafts folder so it appears across all email clients.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComposeRequest"
+      responses:
+        "201":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Draft"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/compose/drafts/{id}:
+    put:
+      tags: [Compose]
+      operationId: updateDraft
+      summary: Update an existing draft
+      description: |
+        Updates the content of an existing draft. The server replaces the draft
+        in the IMAP Drafts folder (delete old, append new).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Draft ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComposeRequest"
+      responses:
+        "200":
+          description: Draft updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Draft"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Compose]
+      operationId: deleteDraft
+      summary: Delete a draft
+      description: Permanently deletes a draft from local storage and IMAP Drafts folder.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Draft ID
+      responses:
+        "204":
+          description: Draft deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ==========================================================================
+  # RECOMMENDATIONS
+  # ==========================================================================
+  /api/v1/recommendations:
+    get:
+      tags: [Recommendations]
+      operationId: listRecommendations
+      summary: List recommendations with filtering
+      description: |
+        Returns a paginated list of recommendations extracted from newsletters.
+        Supports filtering by type and status.
+
+        Default ordering: new items first (by source_date DESC), then saved
+        (by saved_at DESC). Done and dismissed items are only returned when
+        explicitly filtered by status.
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [book, movie, tv, music, article, podcast, other]
+          description: Filter by recommendation type. Omit for all types.
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [new, saved, done, dismissed]
+          description: Filter by status. Omit to return new + saved (default view).
+        - $ref: "#/components/parameters/AccountFilter"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: source_email_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by source newsletter email ID. Used when navigating from Reading Queue footer.
+      responses:
+        "200":
+          description: Paginated list of recommendations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Recommendations]
+      operationId: createRecommendation
+      summary: Manually add a recommendation
+      description: |
+        Creates a user-added recommendation. Marked as "Added by you" in the UI
+        to distinguish from AI-extracted recommendations.
+
+        Future feature -- included in the spec for forward compatibility.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationCreateRequest"
+      responses:
+        "201":
+          description: Recommendation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/recommendations/{id}:
+    get:
+      tags: [Recommendations]
+      operationId: getRecommendation
+      summary: Get recommendation detail
+      description: |
+        Returns the full recommendation detail including all duplicate sources
+        with their context snippets. Used when expanding a recommendation card.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Recommendation ID
+      responses:
+        "200":
+          description: Full recommendation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [Recommendations]
+      operationId: updateRecommendation
+      summary: Update recommendation status
+      description: |
+        Changes the status of a recommendation: new, saved, done, or dismissed.
+        This is the primary interaction on recommendation cards.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Recommendation ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationUpdateRequest"
+      responses:
+        "200":
+          description: Updated recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ==========================================================================
+  # DIGESTS
+  # ==========================================================================
+  /api/v1/digests:
+    get:
+      tags: [Digests]
+      operationId: listDigests
+      summary: List recent digests
+      description: |
+        Returns a paginated list of recent digests, ordered by generation time
+        descending (newest first). Used by the digest date picker to browse
+        historical digests.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Paginated list of digest summaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DigestListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/digests/latest:
+    get:
+      tags: [Digests]
+      operationId: getLatestDigest
+      summary: Get the most recent digest
+      description: |
+        Returns the most recent digest (morning or evening, whichever was
+        generated last). This is the default view when the user opens the
+        Digest tab.
+
+        Optionally filter by type to get the latest morning or evening
+        digest specifically.
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [morning, evening]
+          description: Filter by digest type. Omit for the most recent of either type.
+      responses:
+        "200":
+          description: Latest digest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyDigest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: No digest has been generated yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/digests/{id}:
+    get:
+      tags: [Digests]
+      operationId: getDigest
+      summary: Get a specific digest by ID
+      description: |
+        Returns a specific historical digest. Used when navigating to
+        previous digests via the date picker.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Digest ID
+      responses:
+        "200":
+          description: Digest detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyDigest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [Digests]
+      operationId: updateDigest
+      summary: Update digest metadata
+      description: |
+        Updates mutable digest properties. Currently only supports marking
+        a digest as read. The server automatically marks a digest as read
+        when the client opens it, but this endpoint allows explicit control.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Digest ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DigestUpdateRequest"
+      responses:
+        "200":
+          description: Updated digest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyDigest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ==========================================================================
+  # ACCOUNTS
+  # ==========================================================================
+  /api/v1/accounts:
+    get:
+      tags: [Accounts]
+      operationId: listAccounts
+      summary: List email accounts
+      description: |
+        Returns all configured email accounts with their connection status
+        and email counts per view. Used to populate the account filter control
+        and sidebar badge counts.
+      responses:
+        "200":
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/accounts/{id}:
+    get:
+      tags: [Accounts]
+      operationId: getAccount
+      summary: Get account detail
+      description: Returns detail for a single account including connection status and folder list.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Account ID
+      responses:
+        "200":
+          description: Account detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ==========================================================================
+  # VIP SENDERS
+  # ==========================================================================
+  /api/v1/vip:
+    get:
+      tags: [VIP]
+      operationId: listVIPSenders
+      summary: List VIP senders
+      description: |
+        Returns the list of VIP senders. Emails from VIP senders are always
+        classified as action_required regardless of content.
+      responses:
+        "200":
+          description: List of VIP senders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VIPListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [VIP]
+      operationId: addVIPSender
+      summary: Add a VIP sender
+      description: |
+        Adds a sender to the VIP list. Can be a full email address or a domain.
+        Existing emails from this sender are NOT retroactively reclassified;
+        the VIP rule applies to new incoming emails only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VIPCreateRequest"
+      responses:
+        "201":
+          description: VIP sender added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VIPSender"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: VIP sender already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/vip/{id}:
+    delete:
+      tags: [VIP]
+      operationId: removeVIPSender
+      summary: Remove a VIP sender
+      description: Removes a sender from the VIP list.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: VIP sender ID
+      responses:
+        "204":
+          description: VIP sender removed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ==========================================================================
+  # SYSTEM
+  # ==========================================================================
+  /health:
+    get:
+      tags: [System]
+      operationId: healthCheck
+      summary: Health check
+      description: |
+        Returns server health status. Does NOT require authentication.
+        Includes build info, database connectivity, IMAP connection statuses,
+        and Ollama availability.
+      responses:
+        "200":
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Server is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  # ==========================================================================
+  # WEBSOCKET
+  # ==========================================================================
+  /api/v1/ws:
+    get:
+      tags: [System]
+      operationId: websocketConnect
+      summary: WebSocket connection for real-time events
+      description: |
+        Upgrades the HTTP connection to a WebSocket for real-time event streaming.
+        Authentication is via the `token` query parameter.
+
+        The server pushes events as JSON messages. Each message has a `type` field
+        and a `payload` field. Clients should handle unknown event types gracefully
+        (ignore them) to support forward compatibility.
+
+        The client should send `ping` messages periodically (every 30 seconds) to
+        keep the connection alive. The server responds with `pong`.
+
+        If the connection drops, the client should reconnect with exponential
+        backoff and use the `GET /api/v1/emails` endpoint to catch up on missed
+        events.
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authentication token
+      responses:
+        "101":
+          description: WebSocket connection established
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  # ============================================================================
+  # PARAMETERS
+  # ============================================================================
+  parameters:
+    EmailId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Email ID
+
+    AccountFilter:
+      name: account_id
+      in: query
+      schema:
+        type: string
+      description: |
+        Filter by account ID. Omit to show all accounts. Pass a single
+        account UUID to filter, or pass comma-separated UUIDs to filter
+        by multiple accounts (e.g., `account_id=uuid1,uuid2`).
+
+        The comma-separated form is used for the "Personal" filter, which
+        combines both personal account UUIDs. The server splits the value
+        and applies an SQL `IN` clause.
+      examples:
+        single:
+          summary: Single account filter
+          value: "550e8400-e29b-41d4-a716-446655440000"
+        multiple:
+          summary: Multiple accounts (Personal filter)
+          value: "550e8400-e29b-41d4-a716-446655440000,660e8400-e29b-41d4-a716-446655440001"
+
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: |
+        Opaque cursor for pagination. Returned in the `next_cursor` field of
+        list responses. Pass this value to fetch the next page. Do not construct
+        cursor values -- always use the value from a previous response.
+
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+      description: Maximum number of items to return per page.
+
+  # ============================================================================
+  # RESPONSES (reusable error responses)
+  # ============================================================================
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  # ============================================================================
+  # SCHEMAS
+  # ============================================================================
+  schemas:
+    # --------------------------------------------------------------------------
+    # Error
+    # --------------------------------------------------------------------------
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          examples:
+            - "invalid_parameter"
+            - "not_found"
+            - "unauthorized"
+            - "conflict"
+            - "internal_error"
+        message:
+          type: string
+          description: Human-readable error description
+          examples:
+            - "The 'view' query parameter is required"
+        details:
+          type: object
+          additionalProperties: true
+          description: |
+            Optional additional error context. May include field-level
+            validation errors, constraint details, etc.
+
+    # --------------------------------------------------------------------------
+    # Contact
+    # --------------------------------------------------------------------------
+    Contact:
+      type: object
+      required: [email]
+      properties:
+        name:
+          type: string
+          description: Display name (may be absent)
+          examples:
+            - "Jane Smith"
+        email:
+          type: string
+          format: email
+          description: Email address
+          examples:
+            - "jane@example.com"
+
+    # --------------------------------------------------------------------------
+    # Classification
+    # --------------------------------------------------------------------------
+    Classification:
+      type: object
+      required: [classification, confidence, classified_by]
+      properties:
+        classification:
+          type: string
+          enum: [action_required, newsletter, filtered, transactional]
+          description: The assigned classification
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Classification confidence score (0.0 to 1.0)
+          examples:
+            - 0.95
+        classified_by:
+          type: string
+          enum: [rules, features, llm, user]
+          description: Which layer of the classification pipeline assigned this
+        reason:
+          type: string
+          description: |
+            Human-readable explanation of why this classification was assigned.
+            Primarily used in the Filtered view to show the AI's reasoning.
+          examples:
+            - "Marketing language detected, but sender is in your contacts"
+        is_overridden:
+          type: boolean
+          description: Whether the classification was manually overridden by the user
+          default: false
+
+    # --------------------------------------------------------------------------
+    # SnoozeState
+    # --------------------------------------------------------------------------
+    SnoozeState:
+      type: object
+      required: [id, email_id, snoozed_at, return_at, snooze_count, is_active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email_id:
+          type: string
+          format: uuid
+        snoozed_at:
+          type: string
+          format: date-time
+          description: When the email was last snoozed
+        return_at:
+          type: string
+          format: date-time
+          description: When the email will return to the Action Queue
+        snooze_count:
+          type: integer
+          minimum: 1
+          description: Total number of times this email has been snoozed
+          examples:
+            - 2
+        is_active:
+          type: boolean
+          description: Whether the snooze is currently active
+
+    # --------------------------------------------------------------------------
+    # Email (list item -- no body)
+    # --------------------------------------------------------------------------
+    Email:
+      type: object
+      required:
+        - id
+        - account_id
+        - from
+        - to
+        - subject
+        - snippet
+        - received_at
+        - classification
+        - is_read
+        - is_archived
+        - has_attachments
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        message_id:
+          type: string
+          description: RFC 2822 Message-ID header
+        thread_id:
+          type: string
+          description: Conversation thread ID (Gmail X-GM-THRID or server-generated)
+        from:
+          $ref: "#/components/schemas/Contact"
+        to:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contact"
+        cc:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contact"
+        subject:
+          type: string
+          examples:
+            - "Re: Q3 budget review"
+        snippet:
+          type: string
+          description: First ~200 characters of body text, server-generated
+          examples:
+            - "Can you sign off on the Q3 budget before Friday? I've attached..."
+        received_at:
+          type: string
+          format: date-time
+          description: When the email was received
+        classification:
+          $ref: "#/components/schemas/Classification"
+        is_read:
+          type: boolean
+        is_archived:
+          type: boolean
+        has_attachments:
+          type: boolean
+        snooze:
+          $ref: "#/components/schemas/SnoozeState"
+          description: Current snooze state, null if not snoozed
+        labels:
+          type: array
+          items:
+            type: string
+          description: Applied labels (e.g., "Transactional", "Shipping")
+        account_color:
+          type: string
+          description: Hex color for the account dot (denormalized for convenience)
+          examples:
+            - "#3B82F6"
+        account_name:
+          type: string
+          description: Account display name (denormalized for convenience)
+          examples:
+            - "Work"
+        recommendation_count:
+          type: integer
+          description: |
+            Number of recommendations extracted from this email. Only present
+            for newsletter emails. Used in the Reading Queue to show the star
+            badge with count.
+        last_read_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: |
+            When the email was last opened/viewed. Set by the server when
+            the client fetches email detail via GET /api/v1/emails/{id}.
+            Used for Reading Queue ordering: partially-read items (non-null
+            last_read_at, is_read=false) sink below unread items and are
+            sorted by last_read_at DESC.
+        read_progress:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0.0
+          maximum: 1.0
+          description: |
+            Approximate scroll progress through newsletter content (0.0 to 1.0).
+            Reported by clients via PATCH /api/v1/emails/{id}. Used in the
+            Reading Queue to indicate partially-read newsletters. A value of
+            1.0 means the user scrolled to the bottom. Only meaningful for
+            newsletter emails.
+          examples:
+            - 0.45
+        days_until_expiry:
+          type: integer
+          description: |
+            Days until auto-deletion. Only present for filtered emails.
+            Used in the Filtered view to show "14d left", "7d left", etc.
+
+    # --------------------------------------------------------------------------
+    # EmailDetail (full email with body)
+    # --------------------------------------------------------------------------
+    EmailDetail:
+      type: object
+      required: [id, email, html_body, attachments]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          $ref: "#/components/schemas/Email"
+          description: All email metadata
+        html_body:
+          type: string
+          description: |
+            Sanitized HTML body for rendering in WKWebView. Tracking pixels
+            removed, external resources proxied, JavaScript stripped. When
+            `reader_mode=true`, newsletter chrome is also stripped.
+        text_body:
+          type: string
+          description: Plain text body as fallback
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
+
+    Attachment:
+      type: object
+      required: [id, filename, mime_type, size]
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+          examples:
+            - "Q3-budget-v2.xlsx"
+        mime_type:
+          type: string
+          examples:
+            - "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        size:
+          type: integer
+          description: File size in bytes
+          examples:
+            - 245760
+        download_url:
+          type: string
+          format: uri
+          description: |
+            URL to download the attachment. Requires the same Bearer token
+            authentication.
+
+    # --------------------------------------------------------------------------
+    # Email List Response
+    # --------------------------------------------------------------------------
+    EmailListResponse:
+      type: object
+      required: [data, has_more]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Email"
+        next_cursor:
+          type: string
+          description: Cursor for the next page. Absent when there are no more results.
+        has_more:
+          type: boolean
+          description: Whether there are more results beyond this page
+
+    # --------------------------------------------------------------------------
+    # Email Update Request
+    # --------------------------------------------------------------------------
+    EmailUpdateRequest:
+      type: object
+      description: Partial update -- only include fields to change
+      properties:
+        is_read:
+          type: boolean
+          description: Set read state
+        is_archived:
+          type: boolean
+          description: Set archived state
+        read_progress:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: |
+            Approximate scroll progress through newsletter content (0.0 to 1.0).
+            Clients report this as the user scrolls through a newsletter in the
+            Reading Queue reader view. The server stores the latest value.
+            A value of 1.0 means the user scrolled to the bottom.
+
+    # --------------------------------------------------------------------------
+    # Reclassify Request
+    # --------------------------------------------------------------------------
+    ReclassifyRequest:
+      type: object
+      required: [new_classification]
+      properties:
+        new_classification:
+          type: string
+          enum: [action_required, newsletter, filtered, transactional]
+          description: The target classification
+        confirm:
+          type: boolean
+          default: false
+          description: |
+            When true, confirms the current classification is correct (training
+            signal only, no actual change). Used in the Filtered view when
+            confirming spam. The `new_classification` should match the current
+            classification when confirming.
+
+    # --------------------------------------------------------------------------
+    # Snooze Request
+    # --------------------------------------------------------------------------
+    SnoozeRequest:
+      type: object
+      required: [return_at]
+      properties:
+        return_at:
+          type: string
+          format: date-time
+          description: |
+            When the email should return to the Action Queue. Must be in the
+            future. The server converts to UTC if a timezone offset is provided.
+          examples:
+            - "2026-02-08T09:00:00Z"
+
+    # --------------------------------------------------------------------------
+    # Search Response
+    # --------------------------------------------------------------------------
+    SearchResponse:
+      type: object
+      required: [data, has_more, query]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        next_cursor:
+          type: string
+          description: Cursor for the next page
+        has_more:
+          type: boolean
+        query:
+          type: string
+          description: The search query that was executed
+
+    SearchResult:
+      type: object
+      required: [email, highlight_snippet]
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+        highlight_snippet:
+          type: string
+          description: |
+            Snippet with search terms wrapped in <mark> tags for highlighting.
+            Clients should render these as bold text in the search results.
+          examples:
+            - "...updated the <mark>Q3 budget</mark> with the changes we discussed..."
+
+    # --------------------------------------------------------------------------
+    # Compose
+    # --------------------------------------------------------------------------
+    ComposeRequest:
+      type: object
+      required: [account_id, to, subject, body]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+          description: Which account to send from
+        to:
+          type: array
+          items:
+            type: string
+            format: email
+          description: Recipient addresses
+        cc:
+          type: array
+          items:
+            type: string
+            format: email
+          description: CC addresses
+        bcc:
+          type: array
+          items:
+            type: string
+            format: email
+          description: BCC addresses
+        subject:
+          type: string
+          description: Email subject line
+        body:
+          type: string
+          description: Email body in plain text
+        html_body:
+          type: string
+          description: Optional HTML body. If omitted, server generates from plain text.
+        in_reply_to:
+          type: string
+          format: uuid
+          description: |
+            Email ID being replied to. The server uses this to set In-Reply-To
+            and References headers for proper threading, and to populate the
+            From address from the original recipient.
+        forward_of:
+          type: string
+          format: uuid
+          description: |
+            Email ID being forwarded. The server includes the original body
+            below a "Forwarded message" separator and attaches the original
+            email's attachments.
+
+    ComposeSendResponse:
+      type: object
+      required: [message_id]
+      properties:
+        message_id:
+          type: string
+          description: RFC 2822 Message-ID of the sent email
+          examples:
+            - "<abc123@mail.example.com>"
+
+    Draft:
+      type: object
+      required: [id, account_id, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        to:
+          type: array
+          items:
+            type: string
+            format: email
+        cc:
+          type: array
+          items:
+            type: string
+            format: email
+        bcc:
+          type: array
+          items:
+            type: string
+            format: email
+        subject:
+          type: string
+        body:
+          type: string
+        html_body:
+          type: string
+        in_reply_to:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DraftListResponse:
+      type: object
+      required: [data, has_more]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Draft"
+        next_cursor:
+          type: string
+          description: Cursor for the next page. Absent when there are no more results.
+        has_more:
+          type: boolean
+          description: Whether there are more results beyond this page
+
+    # --------------------------------------------------------------------------
+    # Recommendation
+    # --------------------------------------------------------------------------
+    Recommendation:
+      type: object
+      required:
+        - id
+        - type
+        - title
+        - source_newsletter_name
+        - source_date
+        - context_snippet
+        - status
+        - duplicate_count
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [book, movie, tv, music, article, podcast, other]
+          description: Recommendation category
+        title:
+          type: string
+          description: Title of the recommended item
+          examples:
+            - "The Innovator's Dilemma"
+        creator:
+          type: string
+          description: Author, director, artist, etc.
+          examples:
+            - "Clayton Christensen"
+        source_newsletter_name:
+          type: string
+          description: Name of the newsletter source
+          examples:
+            - "Stratechery"
+        source_email_id:
+          type: string
+          format: uuid
+          description: ID of the newsletter email this was extracted from
+        source_date:
+          type: string
+          format: date-time
+          description: Date of the source newsletter
+        context_snippet:
+          type: string
+          description: The paragraph from the newsletter mentioning this recommendation
+          examples:
+            - "Ben called it 'the best explanation of modularity theory I've read'"
+        status:
+          type: string
+          enum: [new, saved, done, dismissed]
+          description: User-managed status
+        duplicate_count:
+          type: integer
+          minimum: 1
+          description: How many sources recommended this same item
+          examples:
+            - 3
+        is_user_added:
+          type: boolean
+          default: false
+          description: Whether this was manually added by the user
+        created_at:
+          type: string
+          format: date-time
+
+    RecommendationDetail:
+      type: object
+      required: [recommendation, duplicate_sources]
+      properties:
+        recommendation:
+          $ref: "#/components/schemas/Recommendation"
+        full_context:
+          type: string
+          description: |
+            Full paragraph context from the source newsletter (not truncated).
+            May be longer than the `context_snippet` on the list item.
+        duplicate_sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/DuplicateSource"
+          description: All sources that recommended this item (including the primary)
+
+    DuplicateSource:
+      type: object
+      required: [newsletter_name, date, context_snippet]
+      properties:
+        newsletter_name:
+          type: string
+          examples:
+            - "Pragmatic Engineer"
+        email_id:
+          type: string
+          format: uuid
+          description: ID of the source newsletter email
+        date:
+          type: string
+          format: date-time
+        context_snippet:
+          type: string
+          description: The context paragraph from this source
+
+    RecommendationListResponse:
+      type: object
+      required: [data, has_more]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Recommendation"
+        next_cursor:
+          type: string
+        has_more:
+          type: boolean
+
+    RecommendationCreateRequest:
+      type: object
+      required: [type, title]
+      properties:
+        type:
+          type: string
+          enum: [book, movie, tv, music, article, podcast, other]
+        title:
+          type: string
+        creator:
+          type: string
+        context_snippet:
+          type: string
+          description: Optional user note about why they added this
+
+    RecommendationUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [new, saved, done, dismissed]
+
+    # --------------------------------------------------------------------------
+    # Daily Digest
+    # --------------------------------------------------------------------------
+    DailyDigest:
+      type: object
+      required:
+        - id
+        - digest_type
+        - generated_at
+        - sections
+      properties:
+        id:
+          type: string
+          format: uuid
+        digest_type:
+          type: string
+          enum: [morning, evening]
+        generated_at:
+          type: string
+          format: date-time
+        is_read:
+          type: boolean
+          description: Whether the user has viewed this digest
+          default: false
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/DigestSection"
+          description: |
+            Ordered list of sections to render. The client renders each section
+            in order. Section types determine the layout.
+
+    DigestSection:
+      type: object
+      required: [type, title]
+      description: |
+        A single section of the daily digest. The `type` field determines
+        which payload fields are present and how the section should be rendered.
+      properties:
+        type:
+          type: string
+          enum:
+            - action_queue_summary
+            - returning_today
+            - reading_queue_summary
+            - borderline_items
+            - notable_transactional
+            - today_stats
+            - still_pending
+            - newsletters_today
+            - snooze_nudges
+        title:
+          type: string
+          description: Section header text
+          examples:
+            - "ACTION QUEUE"
+            - "RETURNING TODAY"
+        subtitle:
+          type: string
+          description: Optional subtitle text below the header
+          examples:
+            - "3 emails need your response"
+        # --- Payload fields (present depending on section type) ---
+        count:
+          type: integer
+          description: Primary count for summary sections
+        account_breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountCount"
+          description: Per-account counts for action_queue_summary
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DigestItem"
+          description: Actionable items within the section
+        sent_count:
+          type: integer
+          description: Emails sent today (today_stats section)
+        archived_count:
+          type: integer
+          description: Emails archived today (today_stats section)
+
+    AccountCount:
+      type: object
+      required: [account_id, account_name, account_color, count]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        account_name:
+          type: string
+          examples:
+            - "Work"
+        account_color:
+          type: string
+          examples:
+            - "#3B82F6"
+        count:
+          type: integer
+
+    DigestItem:
+      type: object
+      required: [type, email_id]
+      description: |
+        An actionable item within a digest section. The `type` field determines
+        which fields are present and how the item should be rendered.
+      properties:
+        type:
+          type: string
+          enum:
+            - snoozed_return
+            - borderline_email
+            - notable_transactional
+            - newsletter_arrival
+            - snooze_nudge
+        email_id:
+          type: string
+          format: uuid
+          description: Reference to the source email
+        subject:
+          type: string
+        from:
+          type: string
+          description: Sender display name or email
+        # --- Snoozed return fields ---
+        return_at:
+          type: string
+          format: date-time
+          description: When the snooze returns (snoozed_return items)
+        snooze_count:
+          type: integer
+          description: How many times snoozed
+        # --- Borderline fields ---
+        confidence:
+          type: number
+          format: float
+          description: Classification confidence (borderline_email items)
+        explanation:
+          type: string
+          description: AI-generated reason the item might matter
+        # --- Notable transactional fields ---
+        highlight_type:
+          type: string
+          enum: [package_arriving, large_charge, calendar_event]
+          description: Type of transactional highlight
+        display_text:
+          type: string
+          description: Human-readable summary of the event
+          examples:
+            - "2 packages arriving today"
+            - "You were charged $847 by United Airlines"
+        # --- Newsletter arrival fields ---
+        newsletter_name:
+          type: string
+          description: Newsletter source name (newsletter_arrival items)
+        # --- Snooze nudge fields ---
+        days_since_first_snooze:
+          type: integer
+          description: Days since the first snooze (snooze_nudge items)
+
+    DigestUpdateRequest:
+      type: object
+      description: Partial update for digest metadata
+      properties:
+        is_read:
+          type: boolean
+          description: Mark the digest as read
+
+    DigestListResponse:
+      type: object
+      required: [data, has_more]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DigestSummary"
+        next_cursor:
+          type: string
+        has_more:
+          type: boolean
+
+    DigestSummary:
+      type: object
+      required: [id, digest_type, generated_at, is_read]
+      properties:
+        id:
+          type: string
+          format: uuid
+        digest_type:
+          type: string
+          enum: [morning, evening]
+        generated_at:
+          type: string
+          format: date-time
+        is_read:
+          type: boolean
+
+    # --------------------------------------------------------------------------
+    # Account
+    # --------------------------------------------------------------------------
+    Account:
+      type: object
+      required: [id, name, email_address, account_type, color, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Display name
+          examples:
+            - "Work"
+            - "Personal Gmail"
+            - "iCloud"
+        email_address:
+          type: string
+          format: email
+        account_type:
+          type: string
+          enum: [work, personal]
+        color:
+          type: string
+          description: Hex color for UI account dot
+          examples:
+            - "#3B82F6"
+        status:
+          type: string
+          enum: [online, offline, error, syncing]
+          description: Current IMAP connection status
+        status_message:
+          type: string
+          description: Human-readable status detail (e.g., error message)
+        counts:
+          $ref: "#/components/schemas/AccountCounts"
+
+    AccountCounts:
+      type: object
+      description: Email counts per view for this account
+      properties:
+        action_queue:
+          type: integer
+          description: Unarchived action_required emails
+        reading_queue:
+          type: integer
+          description: Unarchived newsletter emails
+        filtered:
+          type: integer
+          description: Filtered emails (not yet auto-deleted)
+        filtered_borderline:
+          type: integer
+          description: Filtered emails with confidence < 0.80
+        all_inboxes:
+          type: integer
+          description: Total email count
+
+    AccountListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Account"
+
+    # --------------------------------------------------------------------------
+    # VIP Sender
+    # --------------------------------------------------------------------------
+    VIPSender:
+      type: object
+      required: [id, email, added_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          description: Full email address or domain
+          examples:
+            - "boss@company.com"
+            - "@important-client.com"
+        name:
+          type: string
+          description: Optional display name
+          examples:
+            - "My Boss"
+        added_at:
+          type: string
+          format: date-time
+
+    VIPListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/VIPSender"
+
+    VIPCreateRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          description: Full email address or @domain
+        name:
+          type: string
+          description: Optional display name
+
+    # --------------------------------------------------------------------------
+    # Health
+    # --------------------------------------------------------------------------
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+          description: Server version
+          examples:
+            - "1.0.0"
+        commit:
+          type: string
+          description: Git commit SHA
+          examples:
+            - "abc1234"
+        uptime_seconds:
+          type: integer
+          description: Server uptime in seconds
+        checks:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [ok, error]
+            ollama:
+              type: string
+              enum: [ok, error, unavailable]
+            imap:
+              type: object
+              additionalProperties:
+                type: string
+                enum: [connected, disconnected, error]
+              description: Per-account IMAP status
+              examples:
+                - work: connected
+                  personal_gmail: connected
+                  icloud: disconnected
+
+    # --------------------------------------------------------------------------
+    # WebSocket Events
+    # --------------------------------------------------------------------------
+    WebSocketEvent:
+      type: object
+      required: [type, payload]
+      description: |
+        A WebSocket message pushed from server to client. Clients should ignore
+        unknown event types for forward compatibility.
+      properties:
+        type:
+          type: string
+          enum:
+            - email.new
+            - email.updated
+            - email.deleted
+            - classification.changed
+            - snooze.created
+            - snooze.returned
+            - snooze.cancelled
+            - recommendation.new
+            - recommendation.updated
+            - digest.available
+            - account.status
+            - pong
+          description: Event type identifier
+        payload:
+          type: object
+          description: Event-specific payload (see individual event schemas)
+        timestamp:
+          type: string
+          format: date-time
+          description: When the event occurred
+
+    # --- Individual WebSocket event payloads ---
+
+    EmailNewEvent:
+      type: object
+      description: |
+        Payload for `email.new` events. Contains the full Email object so the
+        client can insert it directly into the appropriate view.
+      required: [email]
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+
+    EmailUpdatedEvent:
+      type: object
+      description: |
+        Payload for `email.updated` events. Contains the updated Email object.
+        Clients should find the email by ID and replace it.
+      required: [email]
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+
+    EmailDeletedEvent:
+      type: object
+      description: |
+        Payload for `email.deleted` events. Contains only the email ID.
+        Clients should remove the email from all views.
+      required: [email_id]
+      properties:
+        email_id:
+          type: string
+          format: uuid
+
+    ClassificationChangedEvent:
+      type: object
+      description: |
+        Payload for `classification.changed` events. Fired when an email's
+        classification changes (user override, reprocessing). Clients should
+        move the email between views accordingly.
+      required: [email_id, previous_classification, new_classification]
+      properties:
+        email_id:
+          type: string
+          format: uuid
+        previous_classification:
+          type: string
+          enum: [action_required, newsletter, filtered, transactional]
+        new_classification:
+          type: string
+          enum: [action_required, newsletter, filtered, transactional]
+        email:
+          $ref: "#/components/schemas/Email"
+          description: The full updated email object
+
+    SnoozeCreatedEvent:
+      type: object
+      description: |
+        Payload for `snooze.created` events. The email should be visually
+        removed from the active queue (it will return when the snooze expires).
+      required: [email_id, snooze]
+      properties:
+        email_id:
+          type: string
+          format: uuid
+        snooze:
+          $ref: "#/components/schemas/SnoozeState"
+
+    SnoozeReturnedEvent:
+      type: object
+      description: |
+        Payload for `snooze.returned` events. The email should be inserted at
+        the top of the "RETURNING" section of the Action Queue.
+      required: [email_id, email]
+      properties:
+        email_id:
+          type: string
+          format: uuid
+        email:
+          $ref: "#/components/schemas/Email"
+          description: The full email with updated snooze state (is_active=false)
+
+    SnoozeCancelledEvent:
+      type: object
+      description: |
+        Payload for `snooze.cancelled` events. The email returns to the Action
+        Queue immediately.
+      required: [email_id, email]
+      properties:
+        email_id:
+          type: string
+          format: uuid
+        email:
+          $ref: "#/components/schemas/Email"
+
+    RecommendationNewEvent:
+      type: object
+      description: |
+        Payload for `recommendation.new` events. A new recommendation was
+        extracted from a newsletter.
+      required: [recommendation]
+      properties:
+        recommendation:
+          $ref: "#/components/schemas/Recommendation"
+
+    RecommendationUpdatedEvent:
+      type: object
+      description: |
+        Payload for `recommendation.updated` events. A recommendation's status
+        changed (save, done, dismiss) -- possibly from another device.
+      required: [recommendation]
+      properties:
+        recommendation:
+          $ref: "#/components/schemas/Recommendation"
+
+    DigestAvailableEvent:
+      type: object
+      description: |
+        Payload for `digest.available` events. A new daily digest has been
+        generated. The client should show the "NEW" indicator on the digest
+        sidebar/tab item.
+      required: [digest_id, digest_type, generated_at]
+      properties:
+        digest_id:
+          type: string
+          format: uuid
+        digest_type:
+          type: string
+          enum: [morning, evening]
+        generated_at:
+          type: string
+          format: date-time
+
+    AccountStatusEvent:
+      type: object
+      description: |
+        Payload for `account.status` events. An account's IMAP connection
+        status changed (connected, disconnected, error).
+      required: [account_id, status]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [online, offline, error, syncing]
+        status_message:
+          type: string
+          description: Human-readable status detail
+
+  # ============================================================================
+  # SECURITY
+  # ============================================================================
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        API key configured in the server's config.yaml. Passed as a Bearer token
+        in the Authorization header for REST endpoints, or as a `token` query
+        parameter for WebSocket connections.
+
+security:
+  - BearerAuth: []
