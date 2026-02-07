@@ -42,8 +42,8 @@ func TestIntegrationSaveAndGetClassification(t *testing.T) {
 	if got.Classification != models.ClassActionRequired {
 		t.Errorf("expected classification action_required, got %s", got.Classification)
 	}
-	if got.Confidence != 0.95 {
-		t.Errorf("expected confidence 0.95, got %f", got.Confidence)
+	if diff := got.Confidence - 0.95; diff > 0.001 || diff < -0.001 {
+		t.Errorf("expected confidence ~0.95, got %f", got.Confidence)
 	}
 	if got.ClassifiedBy != models.ClassifiedByRules {
 		t.Errorf("expected classified_by rules, got %s", got.ClassifiedBy)
@@ -97,8 +97,8 @@ func TestIntegrationSaveClassificationUpsert(t *testing.T) {
 	if got.Classification != models.ClassActionRequired {
 		t.Errorf("expected upserted classification, got %s", got.Classification)
 	}
-	if got.Confidence != 0.99 {
-		t.Errorf("expected upserted confidence, got %f", got.Confidence)
+	if diff := got.Confidence - 0.99; diff > 0.001 || diff < -0.001 {
+		t.Errorf("expected upserted confidence ~0.99, got %f", got.Confidence)
 	}
 }
 

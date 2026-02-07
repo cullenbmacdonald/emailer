@@ -1,0 +1,50 @@
+From: Support Team <support@company.com>
+To: User One <user@example.com>
+Subject: Your invoice is attached
+Date: Wed, 17 Jan 2024 09:15:00 +0000
+Message-ID: <mixed-001@company.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="boundary-mixed-456"
+
+--boundary-mixed-456
+Content-Type: multipart/alternative; boundary="boundary-alt-inner"
+
+--boundary-alt-inner
+Content-Type: text/plain; charset="UTF-8"
+
+Dear User,
+
+Please find your invoice attached to this email.
+
+Regards,
+Support Team
+
+--boundary-alt-inner
+Content-Type: text/html; charset="UTF-8"
+
+<html>
+<body>
+<p>Dear User,</p>
+<p>Please find your <em>invoice</em> attached to this email.</p>
+<p>Regards,<br>Support Team</p>
+</body>
+</html>
+
+--boundary-alt-inner--
+
+--boundary-mixed-456
+Content-Type: application/pdf; name="invoice-2024-001.pdf"
+Content-Disposition: attachment; filename="invoice-2024-001.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKMSAwIG9iago8PAovVGl0bGUgKEludm9pY2UpCj4+CmVuZG9iagp0cmFpbGVy
+Cjw8Ci9Sb290IDEgMCBSCj4+CiUlRU9GCg==
+
+--boundary-mixed-456
+Content-Type: image/png; name="logo.png"
+Content-Disposition: attachment; filename="logo.png"
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==
+
+--boundary-mixed-456--

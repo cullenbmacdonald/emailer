@@ -1,0 +1,21 @@
+From: Newsletter <news@digest.com>
+To: subscriber@example.com
+Subject: Weekly Digest - Top Stories
+Date: Thu, 18 Jan 2024 08:00:00 +0000
+Message-ID: <html-only-001@digest.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+
+<html>
+<body>
+<h1>Weekly Digest</h1>
+<p>Here are this week's top stories that you should know about:</p>
+<ul>
+<li>Story one about technology advances in the field of artificial intelligence</li>
+<li>Story two about climate change and renewable energy solutions</li>
+<li>Story three about the latest developments in space exploration</li>
+</ul>
+<p>Read more at our website.</p>
+<a href="https://digest.com/unsubscribe">Unsubscribe</a>
+</body>
+</html>
