@@ -81,10 +81,17 @@ type LLMConfig struct {
 	Ollama    OllamaConfig    `yaml:"ollama"`
 	Anthropic AnthropicConfig `yaml:"anthropic"`
 	OpenAI    OpenAIConfig    `yaml:"openai"`
+	LMStudio  LMStudioConfig  `yaml:"lmstudio"`
 }
 
 // OllamaConfig holds Ollama-specific settings.
 type OllamaConfig struct {
+	BaseURL string `yaml:"base_url"`
+	Model   string `yaml:"model"`
+}
+
+// LMStudioConfig holds LM Studio-specific settings.
+type LMStudioConfig struct {
 	BaseURL string `yaml:"base_url"`
 	Model   string `yaml:"model"`
 }

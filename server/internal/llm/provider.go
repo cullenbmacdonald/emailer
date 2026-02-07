@@ -64,6 +64,8 @@ func NewProvider(cfg config.LLMConfig) (Provider, error) {
 	switch cfg.Provider {
 	case "ollama":
 		return NewOllamaProvider(cfg.Ollama.BaseURL, cfg.Ollama.Model), nil
+	case "lmstudio":
+		return NewLMStudioProvider(cfg.LMStudio.BaseURL, cfg.LMStudio.Model), nil
 	case "anthropic":
 		return NewAnthropicProvider(cfg.Anthropic.APIKey, cfg.Anthropic.Model)
 	case "openai":
