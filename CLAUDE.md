@@ -77,6 +77,6 @@ Use Claude Code Agent Teams for parallel implementation. See `docs/plans/ORCHEST
 - IDs: UUID v4 strings
 - Timestamps: UTC ISO 8601
 - Pagination: cursor-based (opaque cursors)
-- Go logging: `log/slog` structured logging
+- Go logging: `rs/zerolog` structured logging
 - Go linting: `golangci-lint`
 - Swift linting: `swiftlint`
