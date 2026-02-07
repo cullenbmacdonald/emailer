@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import EmailClientKit
-@testable import EmailerLib
+@testable import Emailer
 
 @Suite("DigestStore")
 @MainActor

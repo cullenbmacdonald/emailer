@@ -1,14 +1,15 @@
 import Testing
-@testable import EmailerIOSLib
+@testable import EmailerIOS
 
 @Suite("AccountFilter")
+@MainActor
 struct AccountFilterTests {
-    @Test("All filter equals itself")
+    @Test("All filters are equal")
     func allEquality() {
         #expect(AccountFilter.all == AccountFilter.all)
     }
 
-    @Test("Account filter equals same account")
+    @Test("Same accounts are equal")
     func accountEquality() {
         let filter1 = AccountFilter.account(id: "abc", name: "Work")
         let filter2 = AccountFilter.account(id: "abc", name: "Work")
@@ -16,13 +17,13 @@ struct AccountFilterTests {
     }
 
     @Test("Different accounts are not equal")
-    func accountInequality() {
+    func differentAccountsAreNotEqual() {
         let filter1 = AccountFilter.account(id: "abc", name: "Work")
         let filter2 = AccountFilter.account(id: "def", name: "Personal")
         #expect(filter1 != filter2)
     }
 
-    @Test("All is not equal to specific account")
+    @Test("All vs account are not equal")
     func allVsAccountInequality() {
         let allFilter = AccountFilter.all
         let accountFilter = AccountFilter.account(id: "abc", name: "Work")

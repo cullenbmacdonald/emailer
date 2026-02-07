@@ -1,7 +1,8 @@
 import Testing
-@testable import EmailerIOSLib
+@testable import EmailerIOS
 
 @Suite("TabDestination")
+@MainActor
 struct TabDestinationTests {
     @Test("All four tabs are present")
     func tabCount() {

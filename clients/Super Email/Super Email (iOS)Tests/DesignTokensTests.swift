@@ -1,10 +1,11 @@
 import Testing
 import SwiftUI
-@testable import EmailerIOSLib
+@testable import EmailerIOS
 
 // MARK: - IOSDesignTokens Tests
 
 @Suite("IOSDesignTokens")
+@MainActor
 struct DesignTokensTests {
     // MARK: Spacing scale (4pt grid)
 

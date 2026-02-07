@@ -1,7 +1,8 @@
 import Testing
-@testable import EmailerIOSLib
+@testable import EmailerIOS
 
 @Suite("IOSSidebarDestination")
+@MainActor
 struct SidebarDestinationIOSTests {
     @Test("All six destinations are present")
     func destinationCount() {

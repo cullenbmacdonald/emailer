@@ -1,8 +1,9 @@
 import Testing
 import SwiftUI
-@testable import EmailerLib
+@testable import Emailer
 
 @Suite("DesignTokens")
+@MainActor
 struct DesignTokensTests {
     // MARK: - Spacing Constants
 

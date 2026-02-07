@@ -1,5 +1,5 @@
 import Testing
-@testable import EmailerIOSLib
+@testable import EmailerIOS
 
 @Suite("IOSAppState")
 struct AppStateIOSTests {

@@ -1,6 +1,6 @@
 import Testing
 import SwiftUI
-@testable import EmailerIOSLib
+@testable import EmailerIOS
 
 // MARK: - IOSBadgeView Tests
 

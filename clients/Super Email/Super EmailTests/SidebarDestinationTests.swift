@@ -1,7 +1,8 @@
 import Testing
-@testable import EmailerLib
+@testable import Emailer
 
 @Suite("SidebarDestination")
+@MainActor
 struct SidebarDestinationTests {
     @Test("All main views are present")
     func mainViewsCount() {

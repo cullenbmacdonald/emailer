@@ -1,5 +1,5 @@
 import SwiftUI
-import EmailerIOSLib
+import EmailClientKit
 
 @main
 struct EmailerIOSApp: App {

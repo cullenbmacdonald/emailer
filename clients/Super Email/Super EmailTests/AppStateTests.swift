@@ -1,5 +1,5 @@
 import Testing
-@testable import EmailerLib
+@testable import Emailer
 
 @Suite("AppState")
 @MainActor
@@ -12,7 +12,7 @@ struct AppStateTests {
         #expect(state.errorMessage == nil)
     }
 
-    @Test("Selected view can be changed")
+    @Test("Change selected view")
     func changeSelectedView() {
         let state = AppState()
         state.selectedView = .readingQueue
@@ -22,7 +22,7 @@ struct AppStateTests {
         #expect(state.selectedView == nil)
     }
 
-    @Test("Connection state can be toggled")
+    @Test("Connection state")
     func connectionState() {
         let state = AppState()
         state.isConnected = true
@@ -32,7 +32,7 @@ struct AppStateTests {
         #expect(!state.isConnected)
     }
 
-    @Test("Error message can be set and cleared")
+    @Test("Error message")
     func errorMessage() {
         let state = AppState()
         state.errorMessage = "Connection failed"

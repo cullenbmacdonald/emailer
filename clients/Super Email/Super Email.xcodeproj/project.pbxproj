@@ -1,0 +1,985 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		732FC9A62F37A2CB00AFC2C4 /* EmailClientKit in Frameworks */ = {isa = PBXBuildFile; productRef = 732FC9A52F37A2CB00AFC2C4 /* EmailClientKit */; };
+		732FC9A82F37A2D200AFC2C4 /* EmailClientKit in Frameworks */ = {isa = PBXBuildFile; productRef = 732FC9A72F37A2D200AFC2C4 /* EmailClientKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		732FC7E12F379FD000AFC2C4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 732FC7CB2F379FCE00AFC2C4 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 732FC7D22F379FCE00AFC2C4;
+			remoteInfo = "Super Email";
+		};
+		732FC7EB2F379FD000AFC2C4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 732FC7CB2F379FCE00AFC2C4 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 732FC7D22F379FCE00AFC2C4;
+			remoteInfo = "Super Email";
+		};
+		732FC80E2F379FEC00AFC2C4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 732FC7CB2F379FCE00AFC2C4 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 732FC8002F379FEB00AFC2C4;
+			remoteInfo = "Super Email (iOS)";
+		};
+		732FC8182F379FEC00AFC2C4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 732FC7CB2F379FCE00AFC2C4 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 732FC8002F379FEB00AFC2C4;
+			remoteInfo = "Super Email (iOS)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		732FC7D32F379FCE00AFC2C4 /* Super Email (Mac).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Super Email (Mac).app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		732FC7E02F379FD000AFC2C4 /* Super EmailTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Super EmailTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		732FC7EA2F379FD000AFC2C4 /* Super EmailUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Super EmailUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		732FC8012F379FEB00AFC2C4 /* Super Email (iOS).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Super Email (iOS).app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		732FC80D2F379FEC00AFC2C4 /* Super Email (iOS)Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Super Email (iOS)Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		732FC8172F379FEC00AFC2C4 /* Super Email (iOS)UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Super Email (iOS)UITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		732FC7D52F379FCE00AFC2C4 /* Super Email */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Super Email";
+			sourceTree = "<group>";
+		};
+		732FC8022F379FEB00AFC2C4 /* Super Email (iOS) */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Super Email (iOS)";
+			sourceTree = "<group>";
+		};
+		732FCAA02F37B00000AFC2C4 /* Super EmailTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Super EmailTests";
+			sourceTree = "<group>";
+		};
+		732FCAA12F37B00000AFC2C4 /* Super Email (iOS)Tests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Super Email (iOS)Tests";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		732FC7D02F379FCE00AFC2C4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				732FC9A62F37A2CB00AFC2C4 /* EmailClientKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC7DD2F379FD000AFC2C4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC7E72F379FD000AFC2C4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC7FE2F379FEB00AFC2C4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				732FC9A82F37A2D200AFC2C4 /* EmailClientKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC80A2F379FEC00AFC2C4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC8142F379FEC00AFC2C4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		732FC7CA2F379FCE00AFC2C4 = {
+			isa = PBXGroup;
+			children = (
+				732FC7D52F379FCE00AFC2C4 /* Super Email */,
+				732FCAA02F37B00000AFC2C4 /* Super EmailTests */,
+				732FC8022F379FEB00AFC2C4 /* Super Email (iOS) */,
+				732FCAA12F37B00000AFC2C4 /* Super Email (iOS)Tests */,
+				732FC9A42F37A2CB00AFC2C4 /* Frameworks */,
+				732FC7D42F379FCE00AFC2C4 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		732FC7D42F379FCE00AFC2C4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				732FC7D32F379FCE00AFC2C4 /* Super Email (Mac).app */,
+				732FC7E02F379FD000AFC2C4 /* Super EmailTests.xctest */,
+				732FC7EA2F379FD000AFC2C4 /* Super EmailUITests.xctest */,
+				732FC8012F379FEB00AFC2C4 /* Super Email (iOS).app */,
+				732FC80D2F379FEC00AFC2C4 /* Super Email (iOS)Tests.xctest */,
+				732FC8172F379FEC00AFC2C4 /* Super Email (iOS)UITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		732FC9A42F37A2CB00AFC2C4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		732FC7D22F379FCE00AFC2C4 /* Super Email (Mac) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 732FC7F42F379FD000AFC2C4 /* Build configuration list for PBXNativeTarget "Super Email (Mac)" */;
+			buildPhases = (
+				732FC7CF2F379FCE00AFC2C4 /* Sources */,
+				732FC7D02F379FCE00AFC2C4 /* Frameworks */,
+				732FC7D12F379FCE00AFC2C4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				732FC7D52F379FCE00AFC2C4 /* Super Email */,
+			);
+			name = "Super Email (Mac)";
+			packageProductDependencies = (
+				732FC9A52F37A2CB00AFC2C4 /* EmailClientKit */,
+			);
+			productName = "Super Email";
+			productReference = 732FC7D32F379FCE00AFC2C4 /* Super Email (Mac).app */;
+			productType = "com.apple.product-type.application";
+		};
+		732FC7DF2F379FD000AFC2C4 /* Super EmailTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 732FC7F72F379FD000AFC2C4 /* Build configuration list for PBXNativeTarget "Super EmailTests" */;
+			buildPhases = (
+				732FC7DC2F379FD000AFC2C4 /* Sources */,
+				732FC7DD2F379FD000AFC2C4 /* Frameworks */,
+				732FC7DE2F379FD000AFC2C4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				732FC7E22F379FD000AFC2C4 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				732FCAA02F37B00000AFC2C4 /* Super EmailTests */,
+			);
+			name = "Super EmailTests";
+			packageProductDependencies = (
+			);
+			productName = "Super EmailTests";
+			productReference = 732FC7E02F379FD000AFC2C4 /* Super EmailTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		732FC7E92F379FD000AFC2C4 /* Super EmailUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 732FC7FA2F379FD000AFC2C4 /* Build configuration list for PBXNativeTarget "Super EmailUITests" */;
+			buildPhases = (
+				732FC7E62F379FD000AFC2C4 /* Sources */,
+				732FC7E72F379FD000AFC2C4 /* Frameworks */,
+				732FC7E82F379FD000AFC2C4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				732FC7EC2F379FD000AFC2C4 /* PBXTargetDependency */,
+			);
+			name = "Super EmailUITests";
+			packageProductDependencies = (
+			);
+			productName = "Super EmailUITests";
+			productReference = 732FC7EA2F379FD000AFC2C4 /* Super EmailUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		732FC8002F379FEB00AFC2C4 /* Super Email (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 732FC81F2F379FEC00AFC2C4 /* Build configuration list for PBXNativeTarget "Super Email (iOS)" */;
+			buildPhases = (
+				732FC7FD2F379FEB00AFC2C4 /* Sources */,
+				732FC7FE2F379FEB00AFC2C4 /* Frameworks */,
+				732FC7FF2F379FEB00AFC2C4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				732FC8022F379FEB00AFC2C4 /* Super Email (iOS) */,
+			);
+			name = "Super Email (iOS)";
+			packageProductDependencies = (
+				732FC9A72F37A2D200AFC2C4 /* EmailClientKit */,
+			);
+			productName = "Super Email (iOS)";
+			productReference = 732FC8012F379FEB00AFC2C4 /* Super Email (iOS).app */;
+			productType = "com.apple.product-type.application";
+		};
+		732FC80C2F379FEC00AFC2C4 /* Super Email (iOS)Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 732FC8222F379FEC00AFC2C4 /* Build configuration list for PBXNativeTarget "Super Email (iOS)Tests" */;
+			buildPhases = (
+				732FC8092F379FEC00AFC2C4 /* Sources */,
+				732FC80A2F379FEC00AFC2C4 /* Frameworks */,
+				732FC80B2F379FEC00AFC2C4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				732FC80F2F379FEC00AFC2C4 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				732FCAA12F37B00000AFC2C4 /* Super Email (iOS)Tests */,
+			);
+			name = "Super Email (iOS)Tests";
+			packageProductDependencies = (
+			);
+			productName = "Super Email (iOS)Tests";
+			productReference = 732FC80D2F379FEC00AFC2C4 /* Super Email (iOS)Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		732FC8162F379FEC00AFC2C4 /* Super Email (iOS)UITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 732FC8252F379FEC00AFC2C4 /* Build configuration list for PBXNativeTarget "Super Email (iOS)UITests" */;
+			buildPhases = (
+				732FC8132F379FEC00AFC2C4 /* Sources */,
+				732FC8142F379FEC00AFC2C4 /* Frameworks */,
+				732FC8152F379FEC00AFC2C4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				732FC8192F379FEC00AFC2C4 /* PBXTargetDependency */,
+			);
+			name = "Super Email (iOS)UITests";
+			packageProductDependencies = (
+			);
+			productName = "Super Email (iOS)UITests";
+			productReference = 732FC8172F379FEC00AFC2C4 /* Super Email (iOS)UITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		732FC7CB2F379FCE00AFC2C4 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					732FC7D22F379FCE00AFC2C4 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					732FC7DF2F379FD000AFC2C4 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 732FC7D22F379FCE00AFC2C4;
+					};
+					732FC7E92F379FD000AFC2C4 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 732FC7D22F379FCE00AFC2C4;
+					};
+					732FC8002F379FEB00AFC2C4 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					732FC80C2F379FEC00AFC2C4 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 732FC8002F379FEB00AFC2C4;
+					};
+					732FC8162F379FEC00AFC2C4 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 732FC8002F379FEB00AFC2C4;
+					};
+				};
+			};
+			buildConfigurationList = 732FC7CE2F379FCE00AFC2C4 /* Build configuration list for PBXProject "Super Email" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 732FC7CA2F379FCE00AFC2C4;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				732FC8282F37A03D00AFC2C4 /* XCLocalSwiftPackageReference "../shared" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 732FC7D42F379FCE00AFC2C4 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				732FC7D22F379FCE00AFC2C4 /* Super Email (Mac) */,
+				732FC8002F379FEB00AFC2C4 /* Super Email (iOS) */,
+				732FC7DF2F379FD000AFC2C4 /* Super EmailTests */,
+				732FC7E92F379FD000AFC2C4 /* Super EmailUITests */,
+				732FC80C2F379FEC00AFC2C4 /* Super Email (iOS)Tests */,
+				732FC8162F379FEC00AFC2C4 /* Super Email (iOS)UITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		732FC7D12F379FCE00AFC2C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC7DE2F379FD000AFC2C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC7E82F379FD000AFC2C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC7FF2F379FEB00AFC2C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC80B2F379FEC00AFC2C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC8152F379FEC00AFC2C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		732FC7CF2F379FCE00AFC2C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC7DC2F379FD000AFC2C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC7E62F379FD000AFC2C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC7FD2F379FEB00AFC2C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC8092F379FEC00AFC2C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		732FC8132F379FEC00AFC2C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		732FC7E22F379FD000AFC2C4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 732FC7D22F379FCE00AFC2C4 /* Super Email (Mac) */;
+			targetProxy = 732FC7E12F379FD000AFC2C4 /* PBXContainerItemProxy */;
+		};
+		732FC7EC2F379FD000AFC2C4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 732FC7D22F379FCE00AFC2C4 /* Super Email (Mac) */;
+			targetProxy = 732FC7EB2F379FD000AFC2C4 /* PBXContainerItemProxy */;
+		};
+		732FC80F2F379FEC00AFC2C4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 732FC8002F379FEB00AFC2C4 /* Super Email (iOS) */;
+			targetProxy = 732FC80E2F379FEC00AFC2C4 /* PBXContainerItemProxy */;
+		};
+		732FC8192F379FEC00AFC2C4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 732FC8002F379FEB00AFC2C4 /* Super Email (iOS) */;
+			targetProxy = 732FC8182F379FEC00AFC2C4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		732FC7F22F379FD000AFC2C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		732FC7F32F379FD000AFC2C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = B79847HVPC;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		732FC7F52F379FD000AFC2C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cullenbmacdonald.emailer.macos;
+				PRODUCT_MODULE_NAME = Emailer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		732FC7F62F379FD000AFC2C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cullenbmacdonald.emailer.macos;
+				PRODUCT_MODULE_NAME = Emailer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		732FC7F82F379FD000AFC2C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.super.Super-EmailTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Super Email (Mac).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Super Email (Mac)";
+			};
+			name = Debug;
+		};
+		732FC7F92F379FD000AFC2C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.super.Super-EmailTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Super Email (Mac).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Super Email (Mac)";
+			};
+			name = Release;
+		};
+		732FC7FB2F379FD000AFC2C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.super.Super-EmailUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = "Super Email (Mac)";
+			};
+			name = Debug;
+		};
+		732FC7FC2F379FD000AFC2C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.super.Super-EmailUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = "Super Email (Mac)";
+			};
+			name = Release;
+		};
+		732FC8202F379FEC00AFC2C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cullenbmacdonald.emailer.ios;
+				PRODUCT_MODULE_NAME = EmailerIOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		732FC8212F379FEC00AFC2C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cullenbmacdonald.emailer.ios;
+				PRODUCT_MODULE_NAME = EmailerIOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		732FC8232F379FEC00AFC2C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.super.Super-Email--iOS-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Super Email (iOS).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Super Email (iOS)";
+			};
+			name = Debug;
+		};
+		732FC8242F379FEC00AFC2C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.super.Super-Email--iOS-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Super Email (iOS).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Super Email (iOS)";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		732FC8262F379FEC00AFC2C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.super.Super-Email--iOS-UITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Super Email (iOS)";
+			};
+			name = Debug;
+		};
+		732FC8272F379FEC00AFC2C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B79847HVPC;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.super.Super-Email--iOS-UITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Super Email (iOS)";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		732FC7CE2F379FCE00AFC2C4 /* Build configuration list for PBXProject "Super Email" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				732FC7F22F379FD000AFC2C4 /* Debug */,
+				732FC7F32F379FD000AFC2C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		732FC7F42F379FD000AFC2C4 /* Build configuration list for PBXNativeTarget "Super Email (Mac)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				732FC7F52F379FD000AFC2C4 /* Debug */,
+				732FC7F62F379FD000AFC2C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		732FC7F72F379FD000AFC2C4 /* Build configuration list for PBXNativeTarget "Super EmailTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				732FC7F82F379FD000AFC2C4 /* Debug */,
+				732FC7F92F379FD000AFC2C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		732FC7FA2F379FD000AFC2C4 /* Build configuration list for PBXNativeTarget "Super EmailUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				732FC7FB2F379FD000AFC2C4 /* Debug */,
+				732FC7FC2F379FD000AFC2C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		732FC81F2F379FEC00AFC2C4 /* Build configuration list for PBXNativeTarget "Super Email (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				732FC8202F379FEC00AFC2C4 /* Debug */,
+				732FC8212F379FEC00AFC2C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		732FC8222F379FEC00AFC2C4 /* Build configuration list for PBXNativeTarget "Super Email (iOS)Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				732FC8232F379FEC00AFC2C4 /* Debug */,
+				732FC8242F379FEC00AFC2C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		732FC8252F379FEC00AFC2C4 /* Build configuration list for PBXNativeTarget "Super Email (iOS)UITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				732FC8262F379FEC00AFC2C4 /* Debug */,
+				732FC8272F379FEC00AFC2C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		732FC8282F37A03D00AFC2C4 /* XCLocalSwiftPackageReference "../shared" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		732FC9A52F37A2CB00AFC2C4 /* EmailClientKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 732FC8282F37A03D00AFC2C4 /* XCLocalSwiftPackageReference "../shared" */;
+			productName = EmailClientKit;
+		};
+		732FC9A72F37A2D200AFC2C4 /* EmailClientKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 732FC8282F37A03D00AFC2C4 /* XCLocalSwiftPackageReference "../shared" */;
+			productName = EmailClientKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 732FC7CB2F379FCE00AFC2C4 /* Project object */;
+}
