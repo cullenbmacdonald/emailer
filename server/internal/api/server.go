@@ -23,14 +23,36 @@ type Server struct {
 	pool       *pgxpool.Pool
 	buildInfo  BuildInfo
 	startTime  time.Time
+
+	emails          EmailStore
+	classifications ClassificationStore
+	snoozes         SnoozeStore
+	accounts        AccountStore
+}
+
+// ServerDeps holds optional dependencies for the server.
+// If nil, handlers that need them will return 501.
+type ServerDeps struct {
+	Emails          EmailStore
+	Classifications ClassificationStore
+	Snoozes         SnoozeStore
+	Accounts        AccountStore
 }
 
 // NewServer creates a new HTTP server with all routes and middleware wired up.
-func NewServer(addr string, pool *pgxpool.Pool, authToken string, corsOrigins []string, info BuildInfo) *Server {
+func NewServer(addr string, pool *pgxpool.Pool, authToken string, corsOrigins []string, info BuildInfo, deps ...ServerDeps) *Server {
 	s := &Server{
 		pool:      pool,
 		buildInfo: info,
 		startTime: time.Now(),
+	}
+
+	if len(deps) > 0 {
+		d := deps[0]
+		s.emails = d.Emails
+		s.classifications = d.Classifications
+		s.snoozes = d.Snoozes
+		s.accounts = d.Accounts
 	}
 
 	router := s.routes(authToken, corsOrigins)

@@ -105,10 +105,10 @@ func (s *EmailSyncer) SyncFolder(ctx context.Context, client *imapclient.Client,
 		// Classify the email.
 		if s.classifier != nil {
 			input := &classifier.EmailInput{
-				From:    stored.From,
-				To:      stored.To,
-				CC:      stored.CC,
-				Subject: stored.Subject,
+				From:     stored.From,
+				To:       stored.To,
+				CC:       stored.CC,
+				Subject:  stored.Subject,
 				TextBody: fr.TextBody,
 				HTMLBody: fr.HTMLBody,
 			}

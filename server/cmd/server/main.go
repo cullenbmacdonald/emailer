@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/cullenbmacdonald/emailer/internal/api"
-	"github.com/cullenbmacdonald/emailer/internal/config"
 	"github.com/cullenbmacdonald/emailer/internal/classifier"
+	"github.com/cullenbmacdonald/emailer/internal/config"
 	imapmanager "github.com/cullenbmacdonald/emailer/internal/imap"
 	"github.com/cullenbmacdonald/emailer/internal/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
