@@ -54,6 +54,17 @@ Reference documents:
 - `/docs/plans/api-spec.yaml` — API specification (source of truth for data)
 - `/docs/brainstorms/swift-client-architecture.md` — Architecture reference
 
+## Self-Directing Mode
+
+When given an open-ended prompt like "check progress and implement the next task":
+
+1. **Assess progress:** Read `/docs/plans/macos-requirements.md`. For each task in order, check if the expected files exist, if tests pass, and if acceptance criteria appear met.
+2. **Find the next task:** Pick the first task (by ID order) that is incomplete and whose dependencies are satisfied.
+3. **Implement it:** Follow the approach below.
+4. **Report back:** After completing the task, summarize what you did, list acceptance criteria met, and identify the next task. Then stop and wait for user review.
+
+Do ONE task per cycle. Do not chain multiple tasks without coming up for air.
+
 ## Your Approach
 
 1. **Read the Task**

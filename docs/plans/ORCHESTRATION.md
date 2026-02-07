@@ -1,58 +1,92 @@
 # Agent Orchestration Guide
 
-How to run parallel coding agents for the email client project using Claude Code's Agent Teams and git worktrees.
+How to run parallel coding agents for the email client project using Claude Code Agent Teams and git worktrees.
 
 ---
 
 ## Prerequisites
 
 1. **Claude Code** with Opus 4.6
-2. **Agent Teams enabled**:
-   ```json
-   // ~/.claude/settings.json or project .claude/settings.json
-   {
-     "env": {
-       "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-     }
-   }
-   ```
-3. **Git worktrees** set up (see below)
-4. **Tools installed**: `golangci-lint`, `swiftlint`, PostgreSQL, Ollama
+2. **Git worktrees** set up (see below)
+3. **Tools installed**: `golangci-lint`, `swiftlint`, PostgreSQL, Ollama
 
 ---
 
-## Phase 0: Specification Work (Sequential)
+## The Development Loop
 
-Spec work runs in the main session, not parallel. Each step depends on the previous.
+Each coder agent is self-directing. The user drives the loop:
 
-```bash
-# Step 1: UI/UX Design
-# In main Claude Code session:
-"Use the ui-ux-designer agent to create specs for all views. Write to /docs/plans/ui-ux/"
-
-# Step 2: API Specification (after UI/UX is done)
-"Use the api-architect agent to create the API spec. Write to /docs/plans/api-spec.yaml"
-
-# Step 3: Implementation Requirements (after API spec is done)
-"Use the planner agent to create task breakdowns for server, macOS, and iOS"
+```
+User: "Check progress against requirements and implement the next task"
+  ↓
+Agent: reads requirements → scans codebase → picks next incomplete task → implements → tests
+  ↓
+Agent: reports back — what was done, what's next, any blockers
+  ↓
+User: reviews work, gives feedback or approval
+  ↓
+Repeat
 ```
 
-After Phase 0, commit all specs to main:
-```bash
-git add docs/plans/
-git commit -m "Add UI/UX specs, API spec, and implementation requirements"
-```
+Agents do ONE task per cycle, then come up for air. This keeps the user in control and prevents agents from going off-track on long chains of work.
 
 ---
 
-## Setting Up Worktrees for Parallel Work
+## Agent Teams (Primary Approach)
 
-Before Phase 1 begins, create isolated worktrees:
+Use Claude Code Agent Teams to run 3 agents in parallel with communication.
+
+### Starting a Team
+
+From the main session (leader), create teammates:
+
+```
+Set up an agent team for Phase 1:
+- Teammate 1: go-server-coder working in ../emailer-server/ on server/foundation
+- Teammate 2: macos-client-coder working in ../emailer-macos/ on macos/foundation
+- Teammate 3: ios-client-coder working in ../emailer-ios/ on ios/foundation
+
+Each agent should read their requirements doc and assess current progress.
+```
+
+### Team Communication
+
+- **Leader → Agent:** Give instructions, review work, approve commits
+- **Agent → Leader:** Report completion, flag blockers, request cross-agent coordination
+- **Agent → Agent:** Not direct — communicate through the leader when one agent needs something from another (e.g., iOS needs EmailClientKit from macOS)
+
+### Navigation
+
+- `Shift+Up/Down` — switch between agents
+- `Enter` — view agent output
+- `Escape` — interrupt an agent
+- `Ctrl+B` — background a running agent
+
+### Driving the Loop
+
+Once the team is set up, the standard prompt for each agent is:
+
+```
+Check progress against your requirements and implement the next incomplete task.
+```
+
+Or more specifically:
+
+```
+Implement task S-2.1: IMAP Connection Manager
+```
+
+After each agent reports back, review their work and either approve or give feedback. Then prompt the next cycle.
+
+---
+
+## Setting Up Worktrees
+
+Before starting parallel work, create isolated worktrees:
 
 ```bash
 # From the main repo directory
 git checkout main
-git pull origin main
 
 # Create branches
 git branch server/foundation main
@@ -70,111 +104,32 @@ git worktree list
 
 Each worktree is a full checkout on its own branch:
 ```
-/Users/cullen/dev/emailer          → main (orchestrator)
+/Users/cullen/dev/emailer          → main (leader)
 /Users/cullen/dev/emailer-server   → server/foundation
 /Users/cullen/dev/emailer-macos    → macos/foundation
 /Users/cullen/dev/emailer-ios      → ios/foundation
 ```
 
----
-
-## Phase 1+: Parallel Agent Work
-
-### Option A: Agent Teams (Recommended)
-
-Use Claude Code's native Agent Teams to run 3 agents in parallel:
-
-```
-Create an agent team for parallel implementation:
-- Teammate 1: go-server-coder working in ../emailer-server/ on server/foundation
-- Teammate 2: macos-client-coder working in ../emailer-macos/ on macos/foundation
-- Teammate 3: ios-client-coder working in ../emailer-ios/ on ios/foundation
-
-Each should read their requirements from /docs/plans/ and implement the Phase 1 foundation tasks.
-```
-
-The team lead (your main session) coordinates. Teammates work independently in their worktrees and communicate via the shared task list.
-
-**Navigation:** `Shift+Up/Down` to switch between agents, `Enter` to view, `Escape` to interrupt.
-
-### Option B: Separate Terminal Sessions
-
-Run 3 independent Claude Code sessions, each pointed at a worktree:
-
-```bash
-# Terminal 1: Go Server
-cd ../emailer-server
-claude "You are the go-server-coder. Read /docs/plans/server-requirements.md and implement Phase 1 foundation tasks."
-
-# Terminal 2: macOS App
-cd ../emailer-macos
-claude "You are the macos-client-coder. Read /docs/plans/macos-requirements.md and implement Phase 1 foundation tasks."
-
-# Terminal 3: iOS App
-cd ../emailer-ios
-claude "You are the ios-client-coder. Read /docs/plans/ios-requirements.md and implement Phase 1 foundation tasks."
-```
-
-### Option C: Background Subagents
-
-From one session, launch agents in the background:
-
-```
-Run go-server-coder in the background on ../emailer-server/ to implement Phase 1 server foundation.
-Run macos-client-coder in the background on ../emailer-macos/ to implement Phase 1 macOS foundation.
-Run ios-client-coder in the background on ../emailer-ios/ to implement Phase 1 iOS foundation.
-```
-
-Use `Ctrl+B` to background a running agent. Check progress with `Shift+Up/Down`.
+Use the `worktree-manager` agent to automate setup and cleanup.
 
 ---
 
-## Quality Gates (Enforced Automatically)
+## Phase Transitions
 
-Each coder agent has PostToolUse hooks that run linting after every file edit:
+### Merging a Phase
 
-- **go-server-coder**: Runs `go vet` after each edit
-- **macos-client-coder**: Runs `swiftlint` after each edit
-- **ios-client-coder**: Runs `swiftlint` after each edit
-
-Before committing, agents must also run the full gate:
-
-### Go Server
-```bash
-go build ./...          # compiles
-go test ./...           # all tests pass
-go vet ./...            # no vet warnings
-golangci-lint run       # full linter suite
-```
-
-### Swift Apps
-```bash
-swift build             # compiles
-swift test              # all tests pass
-swiftlint               # linter passes
-```
-
----
-
-## Merging Work Back
-
-After each phase, merge feature branches into main:
+After all agents complete their phase:
 
 ```bash
-# From the main repo
 cd /Users/cullen/dev/emailer
 
-# Merge server work
+# Merge each agent's work
 git merge server/foundation --no-ff -m "Merge server foundation"
-
-# Merge macOS work
 git merge macos/foundation --no-ff -m "Merge macOS foundation"
-
-# Merge iOS work (may need conflict resolution with macOS if shared package changed)
 git merge ios/foundation --no-ff -m "Merge iOS foundation"
 ```
 
-### Switching to Next Phase
+### Starting the Next Phase
 
 ```bash
 # Remove old worktrees
@@ -182,7 +137,7 @@ git worktree remove ../emailer-server
 git worktree remove ../emailer-macos
 git worktree remove ../emailer-ios
 
-# Create new branches for Phase 2
+# Create new branches for the next phase
 git branch server/core-features main
 git branch macos/core-features main
 git branch ios/core-features main
@@ -195,25 +150,71 @@ git worktree add ../emailer-ios    ios/core-features
 
 ---
 
+## Quality Gates
+
+Every agent must satisfy these before reporting a task as done:
+
+### Go Server
+```bash
+make build    # compiles static binary
+make test     # all tests pass (with -race)
+make lint     # golangci-lint + go vet
+make fmt      # auto-fix formatting
+```
+
+### macOS / iOS Apps
+```bash
+swift build   # compiles
+swift test    # all tests pass
+swiftlint     # linter passes
+```
+
+---
+
+## Cross-Agent Dependencies
+
+| Dependency | Details |
+|-----------|---------|
+| iOS depends on macOS M-1.1–M-1.5 | Shared `EmailClientKit` package must exist before iOS foundation |
+| Clients depend on server API | Client integration testing needs running server endpoints |
+| All agents depend on specs | Requirements and API spec are the source of truth — agents implement against them, not each other's code |
+
+When an agent hits a cross-agent dependency that isn't ready, it should report the blocker to the leader rather than waiting silently.
+
+---
+
+## Alternative: Separate Terminal Sessions
+
+If Agent Teams isn't available, run independent Claude Code sessions:
+
+```bash
+# Terminal 1: Go Server
+cd ../emailer-server
+claude "You are the go-server-coder. Check progress against requirements and implement the next task."
+
+# Terminal 2: macOS App
+cd ../emailer-macos
+claude "You are the macos-client-coder. Check progress against requirements and implement the next task."
+
+# Terminal 3: iOS App
+cd ../emailer-ios
+claude "You are the ios-client-coder. Check progress against requirements and implement the next task."
+```
+
+---
+
 ## Agent Memory
 
-All agents have `memory: project` enabled. They store learnings in `.claude/agent-memory/<agent-name>/`. This includes:
-
-- Codebase patterns discovered during implementation
-- Common errors and how to fix them
-- Architectural decisions encountered
-- Library-specific gotchas
-
-Memory persists across sessions, so agents get smarter over time. Check in `.claude/agent-memory/` to version control the shared knowledge.
+Agents store learnings in `.claude/agent-memory/<agent-name>/`. This includes codebase patterns, common errors, and architectural decisions. Memory persists across sessions.
 
 ---
 
 ## Troubleshooting
 
-**Agent can't find files in worktree**: Make sure the agent is `cd`'d to the correct worktree directory. Worktrees are full repo checkouts.
+**Agent can't find files in worktree**: Make sure the agent is working in the correct worktree directory.
 
 **Merge conflicts between macOS and iOS**: Usually in the shared `EmailClientKit` package. Resolve in favor of the most recent change and verify both apps build.
 
-**Linter hook fails on every edit**: The hook uses `|| true` to avoid blocking, but persistent failures mean the linter config isn't set up yet. Set up linting in Phase 1 foundation first.
+**Agent runs out of context**: Agent Teams gives each teammate its own context window. Prefer this over subagents for long-running work.
 
-**Agent runs out of context**: Use Agent Teams instead of subagents for long-running implementation work. Teammates get their own context windows.
+**Agent goes off-track**: Interrupt with `Escape`, review what happened, and redirect with a more specific prompt.
