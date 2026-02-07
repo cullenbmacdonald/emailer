@@ -6,8 +6,9 @@ import Observation
 /// Provides reactive counts for badges, account filter state,
 /// and connectivity status. Stores are injected into the SwiftUI
 /// environment at the root level.
+@MainActor
 @Observable
-public final class AppState_iOS: Sendable {
+public final class IOSAppState {
     // MARK: - Badge counts
 
     /// Unread count for the Action Queue tab badge.
@@ -37,7 +38,7 @@ public final class AppState_iOS: Sendable {
     // MARK: - Sidebar selection (iPad)
 
     /// The currently selected sidebar destination on iPad.
-    public var selectedSidebarDestination: SidebarDestination_iOS? = .actionQueue
+    public var selectedSidebarDestination: IOSSidebarDestination? = .actionQueue
 
     public init() {}
 }
