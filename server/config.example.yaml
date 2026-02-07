@@ -1,0 +1,126 @@
+# Emailer Server Configuration
+# Copy this file to config.yaml and fill in your values.
+# Environment variables override file values (see below).
+
+# --------------------------------------------------------------------------
+# API Server
+# --------------------------------------------------------------------------
+api:
+  port: "8080"                          # EMAILER_PORT
+  auth_token: "change-me-to-a-secret"   # EMAILER_AUTH_TOKEN
+  cors_origins:
+    - "http://localhost:3000"
+
+# --------------------------------------------------------------------------
+# Database (PostgreSQL)
+# --------------------------------------------------------------------------
+database:
+  dsn: "postgres://emailer:emailer@localhost:5432/emailer?sslmode=disable"  # EMAILER_DB_DSN
+  max_conns: 10
+  min_conns: 2
+  max_conn_idle_time: "5m"
+  max_conn_lifetime: "1h"
+
+# --------------------------------------------------------------------------
+# Email Accounts
+# --------------------------------------------------------------------------
+accounts:
+  - id: "personal-gmail"
+    name: "Personal Gmail"
+    email: "you@gmail.com"
+    provider: "gmail"           # gmail, icloud, microsoft365
+    type: "personal"            # personal, work
+    color: "#34A853"
+    imap:
+      host: "imap.gmail.com"
+      port: 993
+    smtp:
+      host: "smtp.gmail.com"
+      port: 587
+    oauth:
+      client_id: "your-client-id.apps.googleusercontent.com"
+      client_secret: "your-client-secret"
+      token_file: "~/.config/emailer/gmail-token.json"
+
+  - id: "personal-icloud"
+    name: "iCloud"
+    email: "you@icloud.com"
+    provider: "icloud"
+    type: "personal"
+    color: "#FF9500"
+    imap:
+      host: "imap.mail.me.com"
+      port: 993
+    smtp:
+      host: "smtp.mail.me.com"
+      port: 587
+    app_password: "xxxx-xxxx-xxxx-xxxx"
+
+  - id: "work"
+    name: "Work"
+    email: "you@company.com"
+    provider: "microsoft365"
+    type: "work"
+    color: "#3B82F6"
+    imap:
+      host: "outlook.office365.com"
+      port: 993
+    smtp:
+      host: "smtp.office365.com"
+      port: 587
+    oauth:
+      client_id: "your-azure-app-id"
+      tenant_id: "your-tenant-id"
+      token_file: "~/.config/emailer/microsoft-token.json"
+
+# --------------------------------------------------------------------------
+# LLM Provider
+# --------------------------------------------------------------------------
+llm:
+  provider: "ollama"              # EMAILER_LLM_PROVIDER: ollama, anthropic, openai
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "qwen2.5:7b"
+  anthropic:
+    api_key: ""                   # EMAILER_ANTHROPIC_API_KEY
+    model: "claude-sonnet-4-20250514"
+  openai:
+    api_key: ""                   # EMAILER_OPENAI_API_KEY
+    model: "gpt-4o-mini"
+
+# --------------------------------------------------------------------------
+# Classification Pipeline
+# --------------------------------------------------------------------------
+classification:
+  action_confidence_threshold: 0.6     # Lower bar for action_required (aggressive)
+  general_confidence_threshold: 0.85   # Threshold for non-action classes
+  llm_fallback_threshold: 0.85        # Below this, escalate to LLM
+
+# --------------------------------------------------------------------------
+# Daily Digest
+# --------------------------------------------------------------------------
+digest:
+  morning_time: "06:00"
+  evening_time: "19:00"
+  timezone: "America/Los_Angeles"
+
+# --------------------------------------------------------------------------
+# Cleanup
+# --------------------------------------------------------------------------
+cleanup:
+  filtered_retention_days: 14          # Auto-delete filtered emails after N days
+
+# --------------------------------------------------------------------------
+# IMAP Sync
+# --------------------------------------------------------------------------
+sync:
+  imap_idle_restart_minutes: 14        # Re-issue IDLE before RFC 29-min timeout
+  folder_poll_minutes: 5               # Check non-INBOX folders periodically
+  full_resync_minutes: 30              # Full UID reconciliation interval
+
+# --------------------------------------------------------------------------
+# Logging
+# --------------------------------------------------------------------------
+logging:
+  level: "info"                        # EMAILER_LOG_LEVEL: debug, info, warn, error
+  file: ""                             # Log to file (empty = stdout only)
