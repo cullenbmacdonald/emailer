@@ -3,9 +3,10 @@
 included:
   - shared/Sources
   - shared/Tests
-  - macos/Sources
-  - macos/Tests
-  - ios/Sources
+  - "Super Email/Super Email/Sources"
+  - "Super Email/Super EmailTests"
+  - "Super Email/Super Email (iOS)"
+  - "Super Email/Super Email (iOS)Tests"
 
 excluded:
   - .build

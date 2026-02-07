@@ -1,14 +1,14 @@
 import SwiftUI
 
 /// The account filter options.
-enum AccountFilter: String, CaseIterable, Identifiable, Sendable {
+public enum AccountFilter: String, CaseIterable, Identifiable, Sendable {
     case all
     case work
     case personal
 
-    var id: String { rawValue }
+    public var id: String { rawValue }
 
-    var label: String {
+    public var label: String {
         switch self {
         case .all: "All"
         case .work: "Work"
@@ -16,7 +16,7 @@ enum AccountFilter: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var dotColor: Color? {
+    public var dotColor: Color? {
         switch self {
         case .all: nil
         case .work: .accountWork
