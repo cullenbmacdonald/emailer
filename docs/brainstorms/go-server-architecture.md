@@ -881,7 +881,7 @@ func RunMigrations(db *sql.DB) error {
 
 ### HTTP Framework
 
-Use the Go standard library `net/http` with Go 1.22+ routing patterns (method + path matching). No external framework needed for this scale. Add `chi` (lightweight router) only if the standard library routing feels limiting.
+Use the Go standard library `net/http` with Go 1.25+ routing patterns (method + path matching). No external framework needed for this scale. Add `chi` (lightweight router) only if the standard library routing feels limiting.
 
 ```go
 func NewServer(cfg *config.Config, store *storage.Store, wsHub *WebSocketHub) *http.Server {

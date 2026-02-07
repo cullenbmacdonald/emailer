@@ -9,7 +9,7 @@
 > - [MASTER-PLAN.md](/docs/plans/MASTER-PLAN.md) -- phased delivery plan
 >
 > **Tech stack:**
-> - Go 1.22+ with `log/slog` structured logging
+> - Go 1.25+ with `log/slog` structured logging
 > - PostgreSQL 16 via `pgx` (pure Go, no CGO)
 > - `chi` router for HTTP
 > - `gorilla/websocket` for WebSocket
