@@ -11,6 +11,7 @@ import (
 
 	"github.com/cullenbmacdonald/emailer/internal/api"
 	"github.com/cullenbmacdonald/emailer/internal/config"
+	imapmanager "github.com/cullenbmacdonald/emailer/internal/imap"
 	"github.com/cullenbmacdonald/emailer/internal/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
@@ -28,6 +29,8 @@ func main() {
 	configPath := flag.String("config", "config.yaml", "path to configuration file")
 	flag.Parse()
 
+	args := flag.Args()
+
 	cfg, err := config.Load(*configPath)
 	if err != nil {
 		// If config file doesn't exist and no explicit path was given,
@@ -42,6 +45,16 @@ func main() {
 			fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
 			os.Exit(1)
 		}
+	}
+
+	// Handle subcommands.
+	if len(args) >= 2 && args[0] == "token-auth" {
+		runTokenAuth(cfg, args[1])
+		return
+	}
+	if len(args) >= 1 && args[0] == "token-auth" {
+		fmt.Fprintf(os.Stderr, "usage: server token-auth <account-id>\n")
+		os.Exit(1)
 	}
 
 	// Set up structured logging
@@ -87,6 +100,26 @@ func main() {
 		}
 	}
 
+	// Create and start IMAP manager (if accounts are configured and DB is available).
+	var imapMgr *imapmanager.Manager
+	if len(cfg.Accounts) > 0 {
+		mgr, imapErr := imapmanager.NewManager(cfg.Accounts, log.Logger)
+		if imapErr != nil {
+			log.Error().Err(imapErr).Msg("failed to create IMAP manager")
+		} else {
+			imapMgr = mgr
+
+			// Wire up the email syncer if we have a database connection.
+			if pool != nil {
+				syncer := imapmanager.NewEmailSyncer(pool, log.Logger)
+				imapMgr.SetSyncer(syncer)
+			}
+
+			imapMgr.Start(context.Background())
+			log.Info().Int("accounts", len(cfg.Accounts)).Msg("IMAP manager started")
+		}
+	}
+
 	// Create and start HTTP server
 	srv := api.NewServer(cfg.Address(), pool, cfg.API.AuthToken, cfg.API.CORSOrig, api.BuildInfo{
 		Version:   version,
@@ -109,6 +142,11 @@ func main() {
 		log.Info().Str("signal", sig.String()).Msg("received signal, shutting down")
 	case err := <-errCh:
 		log.Error().Err(err).Msg("server error")
+	}
+
+	// Stop IMAP manager first.
+	if imapMgr != nil {
+		imapMgr.Stop()
 	}
 
 	// Graceful shutdown with 30-second timeout

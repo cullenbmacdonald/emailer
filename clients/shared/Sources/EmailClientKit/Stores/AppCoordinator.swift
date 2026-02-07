@@ -66,7 +66,7 @@ public final class AppCoordinator {
             let serverURL = try await discovery.discover()
             logger.info("Discovered server at \(serverURL.absoluteString)")
 
-            let client = APIClient(baseURL: serverURL, token: "")
+            let client = APIClient(baseURL: serverURL, token: "change-me-to-a-secret")
             self.apiClient = client
             appState.isConnected = true
             appState.errorMessage = nil
@@ -85,7 +85,7 @@ public final class AppCoordinator {
     private func startWebSocket(baseURL: URL) async {
         let manager = WebSocketManager()
         self.webSocketManager = manager
-        await manager.connect(baseURL: baseURL, token: "")
+        await manager.connect(baseURL: baseURL, token: "change-me-to-a-secret")
         startEventRouting(manager: manager)
     }
 

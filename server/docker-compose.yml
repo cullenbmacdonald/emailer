@@ -30,6 +30,8 @@ services:
       EMAILER_AUTH_TOKEN: ${EMAILER_AUTH_TOKEN:-change-me-to-a-secret}
       EMAILER_DB_DSN: "postgres://${POSTGRES_USER:-emailer}:${POSTGRES_PASSWORD:-emailer}@postgres:5432/${POSTGRES_DB:-emailer}?sslmode=disable"
       EMAILER_LOG_LEVEL: ${EMAILER_LOG_LEVEL:-info}
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
     ports:
       - "8080:8080"
     depends_on:
