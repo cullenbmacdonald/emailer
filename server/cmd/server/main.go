@@ -4,13 +4,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/cullenbmacdonald/emailer/internal/api"
 	"github.com/cullenbmacdonald/emailer/internal/config"
+	"github.com/cullenbmacdonald/emailer/internal/storage"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -58,29 +60,41 @@ func main() {
 		Str("build_time", buildTime).
 		Msg("server starting")
 
-	// Set up HTTP server (placeholder until S-1.7 adds chi router + handlers)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprintf(w, `{"status":"healthy","version":%q,"commit":%q}`, version, commitHash)
-	})
+	// Connect to database (if DSN is configured)
+	var pool *pgxpool.Pool
+	if cfg.Database.DSN != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		dbCfg := storage.DBConfig{
+			DSN:             cfg.Database.DSN,
+			MaxConns:        cfg.Database.MaxConns,
+			MinConns:        cfg.Database.MinConns,
+			MaxConnIdleTime: parseDuration(cfg.Database.MaxConnIdle, 5*time.Minute),
+			MaxConnLifetime: parseDuration(cfg.Database.MaxConnLife, 1*time.Hour),
+		}
+		p, dbErr := storage.NewDB(ctx, dbCfg)
+		cancel()
+		if dbErr != nil {
+			log.Warn().Err(dbErr).Msg("failed to connect to database, starting without DB")
+		} else {
+			pool = p
 
-	srv := &http.Server{
-		Addr:         cfg.Address(),
-		Handler:      mux,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+			// Run migrations
+			if migrateErr := storage.RunMigrations(context.Background(), pool); migrateErr != nil {
+				log.Error().Err(migrateErr).Msg("failed to run migrations")
+			} else {
+				log.Info().Msg("database migrations applied")
+			}
+		}
 	}
 
-	// Start server in a goroutine
-	errCh := make(chan error, 1)
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			errCh <- err
-		}
-	}()
+	// Create and start HTTP server
+	srv := api.NewServer(cfg.Address(), pool, cfg.API.AuthToken, cfg.API.CORSOrig, api.BuildInfo{
+		Version:   version,
+		Commit:    commitHash,
+		BuildTime: buildTime,
+	})
+
+	errCh := srv.Start()
 
 	log.Info().
 		Str("address", cfg.Address()).
@@ -102,10 +116,23 @@ func main() {
 	shutdownErr := srv.Shutdown(shutdownCtx)
 	shutdownCancel()
 
+	if pool != nil {
+		pool.Close()
+	}
+
 	if shutdownErr != nil {
 		log.Error().Err(shutdownErr).Msg("shutdown error")
 		os.Exit(1)
 	}
 
 	log.Info().Msg("server stopped")
+}
+
+// parseDuration parses a duration string, returning the fallback on error.
+func parseDuration(s string, fallback time.Duration) time.Duration {
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return fallback
+	}
+	return d
 }
