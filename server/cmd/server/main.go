@@ -143,11 +143,20 @@ func main() {
 	}
 
 	// Create and start HTTP server
+	// Build server dependencies from storage layer.
+	var deps api.ServerDeps
+	if pool != nil {
+		deps = api.ServerDeps{
+			Emails:   storage.NewEmailStore(pool),
+			Accounts: storage.NewAccountStore(pool),
+		}
+	}
+
 	srv := api.NewServer(cfg.Address(), pool, cfg.API.AuthToken, cfg.API.CORSOrig, api.BuildInfo{
 		Version:   version,
 		Commit:    commitHash,
 		BuildTime: buildTime,
-	})
+	}, deps)
 
 	errCh := srv.Start()
 
