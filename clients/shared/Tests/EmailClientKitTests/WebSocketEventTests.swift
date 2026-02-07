@@ -19,6 +19,7 @@ struct WebSocketEventTests {
         #expect(WebSocketEventType.digestAvailable.rawValue == "digest.available")
         #expect(WebSocketEventType.accountStatus.rawValue == "account.status")
         #expect(WebSocketEventType.pong.rawValue == "pong")
+        #expect(WebSocketEventType.connectionLost.rawValue == "connection.lost")
     }
 
     private func makeEmailJSON() -> String {
@@ -354,8 +355,28 @@ struct WebSocketEventTests {
         #expect(decoded == event)
     }
 
-    @Test("All 12 event types are covered")
+    @Test("Decodes connection.lost event")
+    func decodeConnectionLost() throws {
+        let json = """
+        {
+            "type": "connection.lost",
+            "payload": {
+                "reason": "Network timeout"
+            }
+        }
+        """.data(using: .utf8)!
+
+        let event = try JSONDecoder.apiDecoder.decode(WebSocketEvent.self, from: json)
+        #expect(event.type == .connectionLost)
+        if case let .connectionLost(payload) = event.payload {
+            #expect(payload.reason == "Network timeout")
+        } else {
+            Issue.record("Expected connectionLost payload")
+        }
+    }
+
+    @Test("All 13 event types are covered")
     func allEventTypes() {
-        #expect(WebSocketEventType.allCases.count == 12)
+        #expect(WebSocketEventType.allCases.count == 13)
     }
 }

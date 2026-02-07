@@ -14,6 +14,8 @@ public enum WebSocketEventType: String, Codable, Sendable, Equatable, CaseIterab
     case digestAvailable = "digest.available"
     case accountStatus = "account.status"
     case pong
+    /// Synthetic client-side event emitted when the connection is lost.
+    case connectionLost = "connection.lost"
 }
 
 /// A WebSocket event from the server.
@@ -43,6 +45,8 @@ public enum WebSocketPayload: Sendable, Equatable {
     case digestAvailable(DigestAvailablePayload)
     case accountStatus(AccountStatusPayload)
     case pong
+    /// Synthetic payload emitted when the WebSocket connection drops.
+    case connectionLost(ConnectionLostPayload)
 }
 
 // MARK: - Payload Types
@@ -160,6 +164,14 @@ public struct AccountStatusPayload: Codable, Sendable, Equatable {
     }
 }
 
+public struct ConnectionLostPayload: Codable, Sendable, Equatable {
+    public let reason: String?
+
+    public init(reason: String? = nil) {
+        self.reason = reason
+    }
+}
+
 // MARK: - Custom Codable for WebSocketEvent
 
 extension WebSocketEvent: Codable {
@@ -212,6 +224,9 @@ extension WebSocketEvent: Codable {
             self.payload = .accountStatus(data)
         case .pong:
             self.payload = .pong
+        case .connectionLost:
+            let data = try container.decode(ConnectionLostPayload.self, forKey: .payload)
+            self.payload = .connectionLost(data)
         }
     }
 
@@ -246,6 +261,8 @@ extension WebSocketEvent: Codable {
             try container.encode(data, forKey: .payload)
         case .pong:
             try container.encode([String: String](), forKey: .payload)
+        case let .connectionLost(data):
+            try container.encode(data, forKey: .payload)
         }
     }
 }
