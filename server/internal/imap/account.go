@@ -255,6 +255,9 @@ func (a *Account) runIDLEOnce(ctx context.Context) error {
 	a.setStatus(models.AccountStatusOnline, "")
 	a.logger.Info().Msg("IDLE active on INBOX")
 
+	// Trigger an initial fetch of existing messages.
+	a.signalNewMail()
+
 	return idleLoop(ctx, client, a.logger)
 }
 

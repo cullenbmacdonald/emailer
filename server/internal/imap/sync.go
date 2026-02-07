@@ -3,12 +3,14 @@ package imap
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/emersion/go-imap/v2"
 	"github.com/emersion/go-imap/v2/imapclient"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 
+	"github.com/cullenbmacdonald/emailer/internal/classifier"
 	"github.com/cullenbmacdonald/emailer/internal/models"
 )
 
@@ -21,10 +23,16 @@ type SyncResult struct {
 	Errors    int
 }
 
+// Classifier is the interface for email classification.
+type Classifier interface {
+	Classify(ctx context.Context, input *classifier.EmailInput) *classifier.ClassificationResult
+}
+
 // EmailSyncer coordinates fetching new emails from IMAP and storing them in the database.
 type EmailSyncer struct {
-	pool   *pgxpool.Pool
-	logger zerolog.Logger
+	pool       *pgxpool.Pool
+	classifier Classifier
+	logger     zerolog.Logger
 }
 
 // NewEmailSyncer creates a new syncer that stores fetched emails.
@@ -33,6 +41,11 @@ func NewEmailSyncer(pool *pgxpool.Pool, logger zerolog.Logger) *EmailSyncer {
 		pool:   pool,
 		logger: logger.With().Str("component", "syncer").Logger(),
 	}
+}
+
+// SetClassifier configures the classification pipeline.
+func (s *EmailSyncer) SetClassifier(c Classifier) {
+	s.classifier = c
 }
 
 // SyncFolder fetches new messages from the given folder and stores them.
@@ -88,6 +101,29 @@ func (s *EmailSyncer) SyncFolder(ctx context.Context, client *imapclient.Client,
 		}
 		storedEmails = append(storedEmails, stored)
 		result.NewCount++
+
+		// Classify the email.
+		if s.classifier != nil {
+			input := &classifier.EmailInput{
+				From:    stored.From,
+				To:      stored.To,
+				CC:      stored.CC,
+				Subject: stored.Subject,
+				TextBody: fr.TextBody,
+				HTMLBody: fr.HTMLBody,
+			}
+			cr := s.classifier.Classify(ctx, input)
+			_, classErr := s.pool.Exec(ctx,
+				`INSERT INTO classifications (email_id, classification, confidence, classified_by, reason)
+				 VALUES ($1, $2, $3, $4, $5)
+				 ON CONFLICT (email_id) DO NOTHING`,
+				stored.ID, cr.Classification, cr.Confidence, cr.ClassifiedBy, cr.Reason)
+			if classErr != nil {
+				logger.Warn().Err(classErr).Str("email_id", stored.ID).Msg("failed to store classification")
+			} else {
+				logger.Info().Str("email_id", stored.ID).Str("class", cr.Classification).Float64("confidence", cr.Confidence).Msg("classified")
+			}
+		}
 	}
 
 	logger.Info().
@@ -117,7 +153,7 @@ func (s *EmailSyncer) getLastStoredUID(ctx context.Context, accountID, folder st
 
 // searchNewUIDs uses IMAP SEARCH to find UIDs greater than lastUID.
 func searchNewUIDs(client *imapclient.Client, lastUID imap.UID) ([]imap.UID, error) {
-	// Search for UIDs > lastUID. If lastUID is 0, fetch all.
+	// Search for UIDs > lastUID, limited to last 30 days on initial sync.
 	var uidSet imap.UIDSet
 	if lastUID == 0 {
 		uidSet.AddRange(1, 0) // 1:* means all messages.
@@ -127,6 +163,12 @@ func searchNewUIDs(client *imapclient.Client, lastUID imap.UID) ([]imap.UID, err
 
 	criteria := &imap.SearchCriteria{
 		UID: []imap.UIDSet{uidSet},
+	}
+
+	// On initial sync, limit to last 30 days.
+	if lastUID == 0 {
+		since := time.Now().AddDate(0, 0, -30)
+		criteria.Since = since
 	}
 
 	searchData, err := client.UIDSearch(criteria, nil).Wait()

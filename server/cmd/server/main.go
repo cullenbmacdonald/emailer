@@ -11,6 +11,7 @@ import (
 
 	"github.com/cullenbmacdonald/emailer/internal/api"
 	"github.com/cullenbmacdonald/emailer/internal/config"
+	"github.com/cullenbmacdonald/emailer/internal/classifier"
 	imapmanager "github.com/cullenbmacdonald/emailer/internal/imap"
 	"github.com/cullenbmacdonald/emailer/internal/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -100,6 +101,24 @@ func main() {
 		}
 	}
 
+	// Upsert configured accounts into the database.
+	if pool != nil && len(cfg.Accounts) > 0 {
+		for _, acct := range cfg.Accounts {
+			_, upsertErr := pool.Exec(context.Background(),
+				`INSERT INTO accounts (id, name, email, provider, account_type, color)
+				 VALUES ($1, $2, $3, $4, $5, $6)
+				 ON CONFLICT (id) DO UPDATE SET
+				   name = EXCLUDED.name, email = EXCLUDED.email,
+				   provider = EXCLUDED.provider, account_type = EXCLUDED.account_type,
+				   color = EXCLUDED.color, updated_at = NOW()`,
+				acct.ID, acct.Name, acct.Email, acct.Provider, acct.AccountType, acct.Color)
+			if upsertErr != nil {
+				log.Error().Err(upsertErr).Str("account", acct.Name).Msg("failed to upsert account")
+			}
+		}
+		log.Info().Int("accounts", len(cfg.Accounts)).Msg("accounts synced to database")
+	}
+
 	// Create and start IMAP manager (if accounts are configured and DB is available).
 	var imapMgr *imapmanager.Manager
 	if len(cfg.Accounts) > 0 {
@@ -112,6 +131,9 @@ func main() {
 			// Wire up the email syncer if we have a database connection.
 			if pool != nil {
 				syncer := imapmanager.NewEmailSyncer(pool, log.Logger)
+				// Wire up classification pipeline (rules + features, no LLM for now).
+				pipeline := classifier.NewPipeline(nil, nil, nil, log.Logger)
+				syncer.SetClassifier(pipeline)
 				imapMgr.SetSyncer(syncer)
 			}
 
