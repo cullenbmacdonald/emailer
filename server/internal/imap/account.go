@@ -22,12 +22,12 @@ const defaultPoolSize = 3
 // StatusChangeFunc is a callback invoked when an account's connection status changes.
 type StatusChangeFunc func(accountID, status, message string)
 
-// FetchedEmail is a placeholder for newly fetched email data.
-// The full implementation will be in S-2.2 (sync pipeline).
+// FetchedEmail represents a newly synced email ready for classification.
 type FetchedEmail struct {
 	AccountID    string
 	AccountName  string
 	AccountColor string
+	Email        *models.Email // nil if syncer is not configured (placeholder mode).
 }
 
 // Account represents a single email account's IMAP connection management.
@@ -51,6 +51,9 @@ type Account struct {
 
 	// Callback fired when status changes (set by Manager).
 	onStatusChange StatusChangeFunc
+
+	// Syncer for fetch-parse-store pipeline (set by Manager).
+	syncer *EmailSyncer
 
 	// Channel for signaling that new mail has been detected.
 	newMailCh chan struct{}
@@ -272,20 +275,18 @@ func (a *Account) fetchNewMessages(ctx context.Context, newEmails chan<- *Fetche
 	defer a.pool.Put(client)
 
 	// SELECT INBOX (needed for each pooled connection to fetch from the right mailbox).
-	selectData, err := client.Select("INBOX", nil).Wait()
-	if err != nil {
+	if _, err := client.Select("INBOX", nil).Wait(); err != nil {
 		a.logger.Error().Err(err).Msg("failed to select INBOX for fetch")
 		return
 	}
 
-	if selectData.NumMessages == 0 {
+	// If a syncer is configured, use the full sync pipeline.
+	if a.syncer != nil {
+		a.syncWithPipeline(ctx, client, newEmails)
 		return
 	}
 
-	a.logger.Debug().Uint32("messages", selectData.NumMessages).Msg("fetching new messages")
-
-	// Placeholder: the actual fetch+parse implementation comes in S-2.2.
-	// For now, signal that new mail is available for this account.
+	// Fallback: signal new mail without sync (pre-S-2.2 placeholder).
 	select {
 	case newEmails <- &FetchedEmail{
 		AccountID:    a.cfg.ID,
@@ -293,6 +294,42 @@ func (a *Account) fetchNewMessages(ctx context.Context, newEmails chan<- *Fetche
 		AccountColor: a.cfg.Color,
 	}:
 	case <-ctx.Done():
+	}
+}
+
+// syncWithPipeline runs the full fetch-parse-store sync for INBOX.
+func (a *Account) syncWithPipeline(ctx context.Context, client *imapclient.Client, newEmails chan<- *FetchedEmail) {
+	cfg := AccountFetchConfig{
+		AccountID:    a.cfg.ID,
+		AccountName:  a.cfg.Name,
+		AccountColor: a.cfg.Color,
+	}
+
+	result, emails, err := a.syncer.SyncFolder(ctx, client, "INBOX", cfg, a.logger)
+	if err != nil {
+		a.logger.Error().Err(err).Msg("sync pipeline error")
+	}
+
+	if result != nil {
+		a.logger.Info().
+			Int("new", result.NewCount).
+			Int("skipped", result.SkipCount).
+			Int("errors", result.Errors).
+			Msg("sync result")
+	}
+
+	// Emit each new email for downstream processing (classification).
+	for _, email := range emails {
+		select {
+		case newEmails <- &FetchedEmail{
+			AccountID:    a.cfg.ID,
+			AccountName:  a.cfg.Name,
+			AccountColor: a.cfg.Color,
+			Email:        email,
+		}:
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 

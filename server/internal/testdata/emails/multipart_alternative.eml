@@ -1,0 +1,33 @@
+From: Alice Brown <alice@example.com>
+To: Bob Wilson <bob@example.com>
+Cc: Charlie Davis <charlie@example.com>
+Subject: Multipart alternative email
+Date: Tue, 16 Jan 2024 14:00:00 +0000
+Message-ID: <multipart-alt-001@example.com>
+In-Reply-To: <original-thread-001@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="boundary-alt-123"
+
+--boundary-alt-123
+Content-Type: text/plain; charset="UTF-8"
+
+Hello Bob,
+
+This is the plain text version of the email. It should be used for the
+snippet but the HTML version should be preferred for display.
+
+Thanks,
+Alice
+
+--boundary-alt-123
+Content-Type: text/html; charset="UTF-8"
+
+<html>
+<body>
+<p>Hello Bob,</p>
+<p>This is the <strong>HTML version</strong> of the email. It should be preferred for display.</p>
+<p>Thanks,<br>Alice</p>
+</body>
+</html>
+
+--boundary-alt-123--

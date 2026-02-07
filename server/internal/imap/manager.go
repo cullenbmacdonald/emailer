@@ -59,6 +59,14 @@ func (m *Manager) SetStatusChangeCallback(fn StatusChangeFunc) {
 	}
 }
 
+// SetSyncer configures the email sync pipeline for all accounts.
+// Must be called before Start.
+func (m *Manager) SetSyncer(syncer *EmailSyncer) {
+	for _, acct := range m.accounts {
+		acct.syncer = syncer
+	}
+}
+
 // Start starts IDLE and worker goroutines for each configured account.
 // It returns immediately; goroutines run in the background.
 func (m *Manager) Start(ctx context.Context) {

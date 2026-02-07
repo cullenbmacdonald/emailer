@@ -1,0 +1,9 @@
+From: Verbose Writer <verbose@example.com>
+To: Reader <reader@example.com>
+Subject: A very long email for snippet testing
+Date: Fri, 19 Jan 2024 12:00:00 +0000
+Message-ID: <long-body-001@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+
+This is the beginning of a very long email that is designed to test the snippet generation logic. The snippet should contain approximately the first two hundred characters of the text body with whitespace normalized and should be truncated at a word boundary. This sentence continues to pad out the content so that we exceed the two hundred character limit and can verify that the truncation logic works correctly. Here is even more text to make absolutely sure we go well past the limit. The quick brown fox jumps over the lazy dog, and all good things must come to an end eventually. Let us add yet another sentence for good measure to be completely certain.

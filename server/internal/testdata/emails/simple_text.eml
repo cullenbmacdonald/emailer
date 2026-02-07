@@ -1,0 +1,15 @@
+From: John Doe <john@example.com>
+To: Jane Smith <jane@example.com>
+Subject: Simple text email
+Date: Mon, 15 Jan 2024 10:30:00 -0500
+Message-ID: <simple-text-001@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+
+Hello Jane,
+
+This is a simple plain text email for testing purposes. It contains just
+text content with no HTML or attachments.
+
+Best regards,
+John
