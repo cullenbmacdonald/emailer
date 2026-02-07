@@ -1,29 +1,30 @@
 import SwiftUI
+import EmailClientKit
 
 /// The "More" tab containing Filtered, All Inboxes, and Daily Digest entries.
 /// Shows uncertain count badge on Filtered and "NEW" indicator on Daily Digest.
 public struct MoreView: View {
-    @Environment(IOSAppState.self) private var appState
+    @Environment(AppState.self) private var appState
 
     public init() {}
 
     public var body: some View {
         List {
             NavigationLink {
-                FilteredPlaceholder()
+                IOSPlaceholderView(title: "Filtered", icon: "shield", phase: "Phase 3")
             } label: {
                 Label("Filtered", systemImage: "xmark.shield")
                     .badge(appState.filteredUncertainCount)
             }
 
             NavigationLink {
-                AllInboxesPlaceholder()
+                IOSPlaceholderView(title: "All Inboxes", icon: "tray.2", phase: "Phase 3")
             } label: {
                 Label("All Inboxes", systemImage: "tray.full.fill")
             }
 
             NavigationLink {
-                DailyDigestPlaceholder()
+                IOSPlaceholderView(title: "Daily Digest", icon: "newspaper", phase: "Phase 3")
             } label: {
                 HStack {
                     Label("Daily Digest", systemImage: "newspaper.fill")
@@ -34,19 +35,12 @@ public struct MoreView: View {
                             .fontWeight(.bold)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
-                            .frame(minHeight: 22)
+                            .frame(minHeight: ListRowMetrics.badgeHeight)
                             .background(.blue, in: .capsule)
                     }
                 }
             }
         }
         .navigationTitle("More")
-    }
-}
-
-#Preview {
-    NavigationStack {
-        MoreView()
-            .environment(IOSAppState())
     }
 }

@@ -1,9 +1,10 @@
 import SwiftUI
+import EmailClientKit
 
 /// The root view that selects between iPhone TabView and iPad NavigationSplitView.
 /// Detection uses `UIDevice.current.userInterfaceIdiom` per the requirements.
 public struct IOSRootView: View {
-    @Environment(IOSAppState.self) private var appState
+    @Environment(AppState.self) private var appState
 
     public init() {}
 
@@ -15,13 +16,8 @@ public struct IOSRootView: View {
             MainTabView()
         }
         #else
-        // macOS fallback for SPM builds — show TabView equivalent
-        MainTabView()
+        // macOS fallback for SPM builds -- show TabView equivalent
+        Text("iOS Root View")
         #endif
     }
-}
-
-#Preview("Root View") {
-    IOSRootView()
-        .environment(IOSAppState())
 }

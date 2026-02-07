@@ -1,10 +1,12 @@
 import SwiftUI
+import EmailClientKit
 
+#if os(iOS)
 /// The root TabView for iPhone. Four tabs: Action, Reading, Recs, More.
 /// Action Queue tab shows a badge with unread count from AppState.
 /// Reading Queue has NO badge (ADHD-friendly design).
 public struct MainTabView: View {
-    @Environment(IOSAppState.self) private var appState
+    @Environment(AppState.self) private var appState
 
     public init() {}
 
@@ -17,7 +19,7 @@ public struct MainTabView: View {
                 value: .actionQueue
             ) {
                 NavigationStack {
-                    ActionQueuePlaceholder()
+                    ActionQueueView()
                 }
             }
             .badge(appState.actionQueueUnreadCount)
@@ -28,10 +30,10 @@ public struct MainTabView: View {
                 value: .readingQueue
             ) {
                 NavigationStack {
-                    ReadingQueuePlaceholder()
+                    IOSPlaceholderView(title: "Reading Queue", icon: "book", phase: "Phase 2")
                 }
             }
-            // No badge — Reading Queue should not create urgency
+            // No badge -- Reading Queue should not create urgency
 
             Tab(
                 TabDestination.recommendations.title,
@@ -39,7 +41,7 @@ public struct MainTabView: View {
                 value: .recommendations
             ) {
                 NavigationStack {
-                    RecommendationsPlaceholder()
+                    IOSPlaceholderView(title: "Recommendations", icon: "star", phase: "Phase 3")
                 }
             }
 
@@ -55,8 +57,4 @@ public struct MainTabView: View {
         }
     }
 }
-
-#Preview {
-    MainTabView()
-        .environment(IOSAppState())
-}
+#endif

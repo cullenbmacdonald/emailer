@@ -1,18 +1,21 @@
 import SwiftUI
+import EmailClientKit
 
 /// The root view for iPad, using a three-column NavigationSplitView.
 /// Sidebar shows all 5 views + Digest (same as macOS).
 struct IPadMainView: View {
-    @Environment(IOSAppState.self) private var appState
+    @Environment(AppState.self) private var appState
+    @Environment(EmailStore.self) private var emailStore
+    @Environment(DigestStore.self) private var digestStore
 
     var body: some View {
         @Bindable var appState = appState
         NavigationSplitView {
-            IOSSidebarView(
-                selection: $appState.selectedSidebarDestination,
-                actionQueueCount: appState.actionQueueUnreadCount,
-                filteredCount: appState.filteredUncertainCount,
-                hasNewDigest: appState.hasNewDigest
+            SidebarView(
+                selection: $appState.selectedView,
+                actionQueueCount: emailStore.actionQueueCount,
+                filteredCount: emailStore.filteredBorderlineCount,
+                hasNewDigest: digestStore.hasNewDigest
             )
         } content: {
             contentColumn
@@ -23,7 +26,7 @@ struct IPadMainView: View {
 
     @ViewBuilder
     private var contentColumn: some View {
-        if let destination = appState.selectedSidebarDestination {
+        if let destination = appState.selectedView {
             sidebarContent(for: destination)
         } else {
             ContentUnavailableView(
@@ -44,25 +47,20 @@ struct IPadMainView: View {
     }
 
     @ViewBuilder
-    private func sidebarContent(for destination: IOSSidebarDestination) -> some View {
+    private func sidebarContent(for destination: SidebarDestination) -> some View {
         switch destination {
         case .actionQueue:
-            ActionQueuePlaceholder()
+            ActionQueueView()
         case .readingQueue:
-            ReadingQueuePlaceholder()
+            IOSPlaceholderView(title: "Reading Queue", icon: "book", phase: "Phase 2")
         case .recommendations:
-            RecommendationsPlaceholder()
+            IOSPlaceholderView(title: "Recommendations", icon: "star", phase: "Phase 3")
         case .filtered:
-            FilteredPlaceholder()
+            IOSPlaceholderView(title: "Filtered", icon: "shield", phase: "Phase 3")
         case .allInboxes:
-            AllInboxesPlaceholder()
+            IOSPlaceholderView(title: "All Inboxes", icon: "tray.2", phase: "Phase 3")
         case .dailyDigest:
-            DailyDigestPlaceholder()
+            IOSPlaceholderView(title: "Daily Digest", icon: "newspaper", phase: "Phase 3")
         }
     }
-}
-
-#Preview("iPad Layout") {
-    IPadMainView()
-        .environment(IOSAppState())
 }
