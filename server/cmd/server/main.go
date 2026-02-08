@@ -147,8 +147,14 @@ func main() {
 	var deps api.ServerDeps
 	if pool != nil {
 		deps = api.ServerDeps{
-			Emails:   storage.NewEmailStore(pool),
-			Accounts: storage.NewAccountStore(pool),
+			Emails:          storage.NewEmailStore(pool),
+			Accounts:        storage.NewAccountStore(pool),
+			Classifications: storage.NewClassificationStore(pool),
+			Snoozes:         storage.NewSnoozeStore(pool),
+			Search:          storage.NewSearchStore(pool),
+			Recommendations: storage.NewRecommendationStore(pool),
+			Digests:         storage.NewDigestStore(pool),
+			VIP:             storage.NewVIPStore(pool),
 		}
 	}
 
