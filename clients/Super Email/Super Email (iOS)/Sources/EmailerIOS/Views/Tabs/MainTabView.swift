@@ -83,6 +83,7 @@ public struct MainTabView: View {
             DigestSheetView()
                 .environment(appState as AppState)
                 .environment(digestStore as DigestStore)
+                .presentationBackground(.thinMaterial)
         }
         .sheet(item: $composeStore) { store in
             ComposeView(

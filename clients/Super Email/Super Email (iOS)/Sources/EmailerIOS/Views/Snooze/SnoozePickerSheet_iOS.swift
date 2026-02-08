@@ -74,6 +74,7 @@ struct SnoozePickerSheet_iOS: View {
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.thinMaterial)
         .sheet(isPresented: $showCustomPicker) {
             CustomSnoozeSheet_iOS(
                 onSnooze: onSnooze,

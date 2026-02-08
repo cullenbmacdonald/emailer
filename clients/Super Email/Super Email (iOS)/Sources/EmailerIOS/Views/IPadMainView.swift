@@ -3,11 +3,18 @@ import EmailClientKit
 
 /// The root view for iPad, using a three-column NavigationSplitView.
 /// Sidebar shows all 5 views + Digest (same as macOS).
+///
+/// Layout behavior:
+/// - Landscape: all three columns visible (sidebar + content + detail)
+/// - Portrait: sidebar collapses, content + detail visible
+/// - Standard SwiftUI column collapse/expand via swipe or button
+/// - Supports Split View and Slide Over multitasking
 struct IPadMainView: View {
     @Environment(AppState.self) private var appState
     @Environment(EmailStore.self) private var emailStore
     @Environment(DigestStore.self) private var digestStore
     @State private var composeStore: ComposeStore?
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
         @Bindable var appState = appState
@@ -16,18 +23,18 @@ struct IPadMainView: View {
                 OfflineBanner(pendingActionCount: appState.pendingActionCount)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
-            NavigationSplitView {
-            SidebarView(
-                selection: $appState.selectedView,
-                actionQueueCount: emailStore.actionQueueCount,
-                filteredCount: emailStore.filteredBorderlineCount,
-                hasNewDigest: digestStore.hasNewDigest
-            )
-        } content: {
-            contentColumn
-        } detail: {
-            detailColumn
-        }
+            NavigationSplitView(columnVisibility: $columnVisibility) {
+                SidebarView(
+                    selection: $appState.selectedView,
+                    actionQueueCount: emailStore.actionQueueCount,
+                    filteredCount: emailStore.filteredBorderlineCount,
+                    hasNewDigest: digestStore.hasNewDigest
+                )
+            } content: {
+                contentColumn
+            } detail: {
+                detailColumn
+            }
         }
         .animation(.easeInOut(duration: 0.3), value: appState.isOffline)
         .sheet(item: $composeStore) { store in
@@ -120,6 +127,8 @@ struct IPadMainView: View {
                 }
         case .dailyDigest:
             DigestView()
+                .frame(maxWidth: 720)
+                .frame(maxWidth: .infinity)
                 .onAppear {
                     digestStore.markAsRead()
                     appState.hasNewDigest = false
