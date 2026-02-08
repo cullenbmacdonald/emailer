@@ -11,27 +11,48 @@ public struct ContentView: View {
     @Environment(AppState.self) private var appState
     @Environment(EmailStore.self) private var emailStore
     @Environment(DigestStore.self) private var digestStore
+    @Environment(FocusCoordinator.self) private var focusCoordinator
 
     public init() {}
 
     public var body: some View {
         @Bindable var state = appState
 
-        NavigationSplitView(
-            columnVisibility: .constant(.all)
-        ) {
-            SidebarView(
-                selection: $state.selectedView,
-                actionQueueCount: emailStore.actionQueueCount,
-                filteredCount: emailStore.filteredBorderlineCount,
-                hasNewDigest: digestStore.hasNewDigest
-            )
-            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
-        } content: {
-            contentColumn
-                .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 420)
-        } detail: {
-            detailColumn
+        ZStack {
+            NavigationSplitView(
+                columnVisibility: .constant(.all)
+            ) {
+                SidebarView(
+                    selection: $state.selectedView,
+                    actionQueueCount: emailStore.actionQueueCount,
+                    filteredCount: emailStore.filteredBorderlineCount,
+                    hasNewDigest: digestStore.hasNewDigest
+                )
+                .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+            } content: {
+                contentColumn
+                    .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 420)
+            } detail: {
+                detailColumn
+            }
+            #if os(macOS)
+            .onKeyPress { keyPress in
+                keyHandler.handleKeyPress(keyPress.key)
+            }
+            #endif
+
+            // Overlays
+            #if os(macOS)
+            if focusCoordinator.isCommandPaletteVisible {
+                overlayDimmer
+                CommandPaletteView(commands: paletteCommands)
+            }
+
+            if focusCoordinator.isShortcutHelpVisible {
+                overlayDimmer
+                ShortcutHelpView()
+            }
+            #endif
         }
     }
 
@@ -67,20 +88,121 @@ public struct ContentView: View {
     }
 
     private func handleDetailAction(_ action: DetailAction, detail: EmailDetail) {
-        // Toolbar actions will be wired to stores in subsequent tasks (M-2.4, M-2.5, M-2.6)
         switch action {
-        case .reply, .replyAll, .forward:
-            break // Compose (M-2.6)
+        case .reply:
+            handleReply()
+        case .replyAll:
+            handleReplyAll()
+        case .forward:
+            handleForward()
         case .archive:
-            break // Archive with undo (M-2.4)
+            handleArchive()
         case .snooze:
-            break // Snooze picker (M-2.5)
+            handleSnooze()
         case .move:
-            break // Reclassify
+            handleMove()
         case .trash:
-            break // Delete
+            handleTrash()
         }
     }
+
+    // MARK: - Action Handlers (stubs wired to keyboard + toolbar)
+
+    private func handleReply() {
+        // Will open compose with reply context (M-2.6)
+    }
+
+    private func handleReplyAll() {
+        // Will open compose with reply-all context (M-2.6)
+    }
+
+    private func handleForward() {
+        // Will open compose with forward context (M-2.6)
+    }
+
+    private func handleArchive() {
+        guard let emailID = appState.selectedEmailID else { return }
+        Task {
+            _ = try? await appState.apiClient?.updateEmail(id: emailID, isArchived: true)
+        }
+    }
+
+    private func handleSnooze() {
+        // Will open snooze picker (M-2.5)
+    }
+
+    private func handleMove() {
+        // Will open reclassify picker
+    }
+
+    private func handleTrash() {
+        guard let emailID = appState.selectedEmailID else { return }
+        Task {
+            try? await appState.apiClient?.deleteEmail(id: emailID)
+        }
+    }
+
+    private func handleToggleRead() {
+        guard let emailID = appState.selectedEmailID,
+              let detail = emailStore.selectedDetail else { return }
+        Task {
+            _ = try? await appState.apiClient?.updateEmail(id: emailID, isRead: !detail.email.isRead)
+        }
+    }
+
+    private func handleCompose() {
+        NotificationCenter.default.post(name: .composeNewEmail, object: nil)
+    }
+
+    private func handleSearch() {
+        focusCoordinator.activeFocus = .searchField
+    }
+
+    // MARK: - Keyboard (macOS)
+
+    #if os(macOS)
+    private var keyHandler: EmailListKeyHandler {
+        EmailListKeyHandler(
+            appState: appState,
+            emailStore: emailStore,
+            focusCoordinator: focusCoordinator,
+            onReply: handleReply,
+            onReplyAll: handleReplyAll,
+            onForward: handleForward,
+            onArchive: handleArchive,
+            onSnooze: handleSnooze,
+            onMove: handleMove,
+            onTrash: handleTrash,
+            onToggleRead: handleToggleRead,
+            onSearch: handleSearch,
+            onCompose: handleCompose
+        )
+    }
+
+    private var paletteCommands: [PaletteCommand] {
+        PaletteCommandBuilder.buildCommands(
+            appState: appState,
+            focusCoordinator: focusCoordinator,
+            onCompose: handleCompose,
+            onReply: handleReply,
+            onReplyAll: handleReplyAll,
+            onForward: handleForward,
+            onArchive: handleArchive,
+            onSnooze: handleSnooze,
+            onTrash: handleTrash,
+            onToggleRead: handleToggleRead
+        )
+    }
+
+    private var overlayDimmer: some View {
+        Color.black.opacity(0.3)
+            .ignoresSafeArea()
+            .onTapGesture {
+                focusCoordinator.dismissCommandPalette()
+                focusCoordinator.dismissShortcutHelp()
+            }
+    }
+    #endif
 }
 
 /// Placeholder for the content column until each view is implemented.

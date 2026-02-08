@@ -55,6 +55,34 @@ func mockResponse(
     )!
 }
 
+/// Convenience factory for creating test Email instances.
+enum TestHelpers {
+    static func makeEmail(
+        id: String = "email-1",
+        subject: String = "Test Email",
+        classification: ClassificationType = .actionRequired,
+        isRead: Bool = false
+    ) -> Email {
+        Email(
+            id: id,
+            accountId: "acc-1",
+            from: Contact(name: "Jane", email: "jane@example.com"),
+            to: [Contact(email: "john@example.com")],
+            subject: subject,
+            snippet: "This is a test",
+            receivedAt: Date(),
+            classification: Classification(
+                classification: classification,
+                confidence: 0.95,
+                classifiedBy: .llm
+            ),
+            isRead: isRead,
+            isArchived: false,
+            hasAttachments: false
+        )
+    }
+}
+
 /// Sample email JSON for tests.
 let sampleEmailJSON = """
 {

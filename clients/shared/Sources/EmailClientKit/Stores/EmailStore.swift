@@ -122,6 +122,38 @@ public final class EmailStore {
         selectedDetail = nil
     }
 
+    // MARK: - Optimistic Mutations
+
+    /// Remove an email from the action queue (for optimistic archive/trash).
+    /// Returns the removed email so it can be restored on undo.
+    @discardableResult
+    public func removeFromActionQueue(id: String) -> Email? {
+        guard let index = actionQueue.firstIndex(where: { $0.id == id }) else { return nil }
+        let email = actionQueue.remove(at: index)
+        allInboxes.removeAll { $0.id == id }
+        return email
+    }
+
+    /// Restore a previously removed email to the action queue (for undo).
+    public func restoreToActionQueue(_ email: Email) {
+        upsert(email, into: &actionQueue)
+        upsert(email, into: &allInboxes)
+    }
+
+    /// Update the read state of an email across all lists.
+    public func updateReadState(id: String, isRead: Bool) {
+        updateField(id: id, in: &actionQueue) { $0.withReadState(isRead) }
+        updateField(id: id, in: &readingQueue) { $0.withReadState(isRead) }
+        updateField(id: id, in: &filtered) { $0.withReadState(isRead) }
+        updateField(id: id, in: &allInboxes) { $0.withReadState(isRead) }
+    }
+
+    private func updateField(id: String, in list: inout [Email], transform: (Email) -> Email) {
+        if let index = list.firstIndex(where: { $0.id == id }) {
+            list[index] = transform(list[index])
+        }
+    }
+
     // MARK: - Private
 
     private func insertEmail(_ email: Email) {

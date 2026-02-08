@@ -4,9 +4,14 @@ import SwiftUI
 ///
 /// Shows two sections when snoozed returns exist (RETURNING + NEW),
 /// or a flat list when there are none. Account filter at top.
+/// On iOS, adds swipe actions, context menu, pull-to-refresh, and NavigationLink.
 public struct ActionQueueView: View {
     @Environment(AppState.self) private var appState
     @Environment(EmailStore.self) private var emailStore
+
+    #if os(iOS)
+    @State private var actionHandler = EmailActionHandler()
+    #endif
 
     public init() {}
 
@@ -34,6 +39,19 @@ public struct ActionQueueView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 AccountFilterMenu(accountFilter: $state.accountFilter)
+            }
+        }
+        .refreshable {
+            await refreshActionQueue()
+        }
+        .overlay(alignment: .bottom) {
+            if let toast = actionHandler.undoToast {
+                UndoToast(message: toast.message) {
+                    toast.undoAction()
+                    actionHandler.dismissUndoToast()
+                } onDismiss: {
+                    actionHandler.dismissUndoToast()
+                }
             }
         }
         #endif
@@ -77,13 +95,7 @@ public struct ActionQueueView: View {
     private func sectionedList(returning: [Email], new: [Email]) -> some View {
         Section {
             ForEach(returning) { email in
-                EmailRowView(
-                    email: email,
-                    isSelected: email.id == appState.selectedEmailID,
-                    isSnoozeReturn: true
-                )
-                .tag(email.id)
-                .id(email.id)
+                emailRow(email: email, isSnoozeReturn: true)
             }
         } header: {
             returningSectionHeader
@@ -91,12 +103,7 @@ public struct ActionQueueView: View {
 
         Section {
             ForEach(new) { email in
-                EmailRowView(
-                    email: email,
-                    isSelected: email.id == appState.selectedEmailID
-                )
-                .tag(email.id)
-                .id(email.id)
+                emailRow(email: email)
             }
         } header: {
             newSectionHeader
@@ -110,16 +117,165 @@ public struct ActionQueueView: View {
     @ViewBuilder
     private func flatList(_ emails: [Email]) -> some View {
         ForEach(emails) { email in
-            EmailRowView(
-                email: email,
-                isSelected: email.id == appState.selectedEmailID
-            )
-            .tag(email.id)
-            .id(email.id)
+            emailRow(email: email)
         }
 
         loadMoreRow
     }
+
+    // MARK: - Email Row (with platform-specific wrapping)
+
+    @ViewBuilder
+    private func emailRow(email: Email, isSnoozeReturn: Bool = false) -> some View {
+        let row = EmailRowView(
+            email: email,
+            isSelected: email.id == appState.selectedEmailID,
+            isSnoozeReturn: isSnoozeReturn
+        )
+        .tag(email.id)
+        .id(email.id)
+
+        #if os(iOS)
+        NavigationLink(value: email.id) {
+            row
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button {
+                actionHandler.archive(
+                    emailID: email.id,
+                    emailStore: emailStore,
+                    apiClient: appState.apiClient
+                )
+            } label: {
+                Label("Archive", systemImage: "archivebox")
+            }
+            .tint(Color.success)
+
+            Button {
+                actionHandler.toggleRead(
+                    emailID: email.id,
+                    isCurrentlyRead: email.isRead,
+                    emailStore: emailStore,
+                    apiClient: appState.apiClient
+                )
+            } label: {
+                Label(
+                    email.isRead ? "Mark Unread" : "Mark Read",
+                    systemImage: email.isRead ? "envelope.badge" : "envelope.open"
+                )
+            }
+            .tint(Color.accentColor)
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                actionHandler.trash(
+                    emailID: email.id,
+                    emailStore: emailStore,
+                    apiClient: appState.apiClient
+                )
+            } label: {
+                Label("Trash", systemImage: "trash")
+            }
+            .tint(Color.destructive)
+
+            Button {
+                actionHandler.beginSnooze(emailID: email.id)
+            } label: {
+                Label("Snooze", systemImage: "clock")
+            }
+            .tint(Color.snooze)
+        }
+        .contextMenu {
+            emailContextMenu(email: email)
+        }
+        #else
+        row
+        #endif
+    }
+
+    // MARK: - Context Menu (iOS)
+
+    #if os(iOS)
+    @ViewBuilder
+    private func emailContextMenu(email: Email) -> some View {
+        Button {
+            // Reply action -- will be wired in compose task
+        } label: {
+            Label("Reply", systemImage: "arrowshape.turn.up.left")
+        }
+
+        Button {
+            // Reply All -- will be wired in compose task
+        } label: {
+            Label("Reply All", systemImage: "arrowshape.turn.up.left.2")
+        }
+
+        Button {
+            // Forward -- will be wired in compose task
+        } label: {
+            Label("Forward", systemImage: "arrowshape.turn.up.right")
+        }
+
+        Divider()
+
+        Button {
+            actionHandler.archive(
+                emailID: email.id,
+                emailStore: emailStore,
+                apiClient: appState.apiClient
+            )
+        } label: {
+            Label("Archive", systemImage: "archivebox")
+        }
+
+        Button {
+            actionHandler.beginSnooze(emailID: email.id)
+        } label: {
+            Label("Snooze", systemImage: "clock")
+        }
+
+        Menu {
+            Button {
+                // Move to Reading Queue -- will be wired with reclassify
+            } label: {
+                Label("Reading Queue", systemImage: "book")
+            }
+            Button {
+                // Move to Filtered -- will be wired with reclassify
+            } label: {
+                Label("Filtered", systemImage: "xmark.shield")
+            }
+        } label: {
+            Label("Move to...", systemImage: "folder")
+        }
+
+        Button {
+            actionHandler.toggleRead(
+                emailID: email.id,
+                isCurrentlyRead: email.isRead,
+                emailStore: emailStore,
+                apiClient: appState.apiClient
+            )
+        } label: {
+            Label(
+                email.isRead ? "Mark Unread" : "Mark Read",
+                systemImage: email.isRead ? "envelope.badge" : "envelope.open"
+            )
+        }
+
+        Divider()
+
+        Button(role: .destructive) {
+            actionHandler.trash(
+                emailID: email.id,
+                emailStore: emailStore,
+                apiClient: appState.apiClient
+            )
+        } label: {
+            Label("Trash", systemImage: "trash")
+        }
+    }
+    #endif
 
     // MARK: - Section Headers
 
@@ -218,10 +374,24 @@ public struct ActionQueueView: View {
         }
     }
 
-    // MARK: - Pagination
+    // MARK: - Data Loading
 
     private func loadNextPage() async {
         // Pagination requires the coordinator's API client.
         // This will be wired up when the coordinator is injected into the environment.
     }
+
+    #if os(iOS)
+    private func refreshActionQueue() async {
+        guard let client = appState.apiClient else { return }
+        emailStore.setLoading(true)
+        do {
+            let response = try await client.fetchEmails(view: .actionQueue)
+            emailStore.setEmails(response.data, for: .actionQueue)
+        } catch {
+            // Refresh failed -- keep existing data
+        }
+        emailStore.setLoading(false)
+    }
+    #endif
 }

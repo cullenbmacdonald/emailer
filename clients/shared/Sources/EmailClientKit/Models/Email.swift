@@ -72,4 +72,32 @@ public struct Email: Codable, Identifiable, Sendable, Equatable {
         self.readProgress = readProgress
         self.daysUntilExpiry = daysUntilExpiry
     }
+
+    /// Return a copy with a different read state.
+    public func withReadState(_ isRead: Bool) -> Email {
+        Email(
+            id: id,
+            accountId: accountId,
+            messageId: messageId,
+            threadId: threadId,
+            from: from,
+            to: to,
+            cc: cc,
+            subject: subject,
+            snippet: snippet,
+            receivedAt: receivedAt,
+            classification: classification,
+            isRead: isRead,
+            isArchived: isArchived,
+            hasAttachments: hasAttachments,
+            snooze: snooze,
+            labels: labels,
+            accountColor: accountColor,
+            accountName: accountName,
+            recommendationCount: recommendationCount,
+            lastReadAt: lastReadAt,
+            readProgress: readProgress,
+            daysUntilExpiry: daysUntilExpiry
+        )
+    }
 }
