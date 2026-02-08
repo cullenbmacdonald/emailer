@@ -94,7 +94,7 @@ public struct ContentView: View {
             case .actionQueue:
                 ActionQueueView()
             case .readingQueue:
-                PlaceholderListView(destination: destination)
+                ReadingQueueView()
             case .filtered:
                 FilteredView()
             case .allInboxes:

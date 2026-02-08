@@ -36,7 +36,10 @@ public struct MainTabView: View {
                 value: .readingQueue
             ) {
                 NavigationStack {
-                    IOSPlaceholderView(title: "Reading Queue", icon: "book", phase: "Phase 2")
+                    ReadingQueueView()
+                        .navigationDestination(for: String.self) { emailID in
+                            IOSEmailDetailView(emailID: emailID)
+                        }
                         .toolbar { digestToolbarItem }
                 }
             }

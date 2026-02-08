@@ -84,7 +84,10 @@ struct IPadMainView: View {
         case .actionQueue:
             ActionQueueView()
         case .readingQueue:
-            IOSPlaceholderView(title: "Reading Queue", icon: "book", phase: "Phase 2")
+            ReadingQueueView()
+                .navigationDestination(for: String.self) { emailID in
+                    IOSEmailDetailView(emailID: emailID)
+                }
         case .recommendations:
             IOSRecommendationListView()
                 .navigationDestination(for: String.self) { recID in

@@ -150,6 +150,22 @@ public final class EmailStore {
         return email
     }
 
+    /// Remove an email from the reading queue (for optimistic archive/trash).
+    /// Returns the removed email so it can be restored on undo.
+    @discardableResult
+    public func removeFromReadingQueue(id: String) -> Email? {
+        guard let index = readingQueue.firstIndex(where: { $0.id == id }) else { return nil }
+        let email = readingQueue.remove(at: index)
+        allInboxes.removeAll { $0.id == id }
+        return email
+    }
+
+    /// Restore a previously removed email to the reading queue (for undo).
+    public func restoreToReadingQueue(_ email: Email) {
+        upsert(email, into: &readingQueue)
+        upsert(email, into: &allInboxes)
+    }
+
     /// Restore a previously removed email to the filtered list (for undo).
     public func restoreToFiltered(_ email: Email) {
         upsert(email, into: &filtered)

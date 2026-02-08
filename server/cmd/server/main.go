@@ -16,6 +16,7 @@ import (
 	"github.com/cullenbmacdonald/emailer/internal/jobs"
 	"github.com/cullenbmacdonald/emailer/internal/llm"
 	"github.com/cullenbmacdonald/emailer/internal/models"
+	"github.com/cullenbmacdonald/emailer/internal/digest"
 	"github.com/cullenbmacdonald/emailer/internal/recommender"
 	"github.com/cullenbmacdonald/emailer/internal/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -227,6 +228,26 @@ func main() {
 		log.Info().Msg("recommendation worker started")
 	}
 
+	// Start digest scheduler.
+	digestData := digest.NewPgDataSource(pool)
+	digestSaver := storage.NewDigestStore(pool)
+	digestGen := digest.NewGenerator(digestData, digestSaver, srv.Hub())
+	digestScheduler, err := digest.NewScheduler(digest.SchedulerConfig{
+		MorningTime: cfg.Digest.MorningTime,
+		EveningTime: cfg.Digest.EveningTime,
+		Timezone:    cfg.Digest.Timezone,
+	}, digestGen)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create digest scheduler")
+	}
+	digestCtx, digestCancel := context.WithCancel(context.Background())
+	jobs.StartDigestScheduler(digestCtx, digestScheduler)
+	log.Info().
+		Str("morning", cfg.Digest.MorningTime).
+		Str("evening", cfg.Digest.EveningTime).
+		Str("timezone", cfg.Digest.Timezone).
+		Msg("digest scheduler started")
+
 	errCh := srv.Start()
 
 	log.Info().
@@ -244,7 +265,8 @@ func main() {
 		log.Error().Err(err).Msg("server error")
 	}
 
-	// Stop recommendation worker.
+	// Stop background workers.
+	digestCancel()
 	if recWorkerCancel != nil {
 		recWorkerCancel()
 	}
