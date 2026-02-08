@@ -10,6 +10,7 @@ const (
 	RecTypeMusic   = "music"
 	RecTypeArticle = "article"
 	RecTypePodcast = "podcast"
+	RecTypeRecipe  = "recipe"
 	RecTypeOther   = "other"
 )
 
@@ -74,7 +75,7 @@ type RecommendationListResponse struct {
 
 // ValidRecommendationTypes returns all valid recommendation type values.
 func ValidRecommendationTypes() []string {
-	return []string{RecTypeBook, RecTypeMovie, RecTypeTV, RecTypeMusic, RecTypeArticle, RecTypePodcast, RecTypeOther}
+	return []string{RecTypeBook, RecTypeMovie, RecTypeTV, RecTypeMusic, RecTypeArticle, RecTypePodcast, RecTypeRecipe, RecTypeOther}
 }
 
 // ValidRecommendationStatuses returns all valid recommendation status values.

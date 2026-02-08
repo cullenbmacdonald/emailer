@@ -8,6 +8,7 @@ public enum RecommendationType: String, Codable, Sendable, Equatable, CaseIterab
     case music
     case article
     case podcast
+    case recipe
     case other
 }
 

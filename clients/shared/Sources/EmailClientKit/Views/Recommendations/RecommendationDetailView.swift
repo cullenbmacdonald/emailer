@@ -245,18 +245,21 @@ public struct RecommendationDetailView: View {
         } label: {
             Label("Save", systemImage: "bookmark.fill")
         }
+        .help("Save")
 
         Button {
             Task { await store.updateStatus(id: rec.id, to: .done, using: appState.apiClient) }
         } label: {
             Label("Done", systemImage: "checkmark.circle.fill")
         }
+        .help("Done")
 
         Button {
             Task { await store.updateStatus(id: rec.id, to: .dismissed, using: appState.apiClient) }
         } label: {
             Label("Dismiss", systemImage: "xmark.circle.fill")
         }
+        .help("Dismiss")
 
         if let sourceID = rec.sourceEmailId {
             Button {
@@ -265,6 +268,7 @@ public struct RecommendationDetailView: View {
             } label: {
                 Label("Open Source", systemImage: "newspaper.fill")
             }
+            .help("Open Source Email")
         }
     }
     #endif

@@ -43,10 +43,8 @@ public struct EmailDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
-                DetailToolbar { action in
-                    onAction?(action, detail)
-                }
+            DetailToolbar { action in
+                onAction?(action, detail)
             }
         }
         .task(id: detail.id) {

@@ -19,16 +19,18 @@ Respond in JSON format:
     "reasoning": "brief explanation"
 }`
 
-const extractionSystemPrompt = `Extract all recommendations from this newsletter. A recommendation is when the author suggests, endorses, praises, or highlights a specific item.
+const extractionSystemPrompt = `Extract all recommendations from this email. A recommendation is when the author suggests, endorses, praises, or highlights a specific item.
 
 For each recommendation found, extract:
-- type: one of "book", "movie_tv", "music", "article", "podcast", "other"
+- type: one of "book", "movie_tv", "music", "article", "podcast", "recipe", "other"
 - title: the name of the recommended item
 - creator: author, director, artist, etc. (if mentioned)
 - context: the sentence or phrase where the recommendation appears (quote directly from the text)
 - confidence: "high" (explicit endorsement), "medium" (positive mention), or "low" (passing reference)
 
-Only include items the author is clearly recommending or endorsing. Do not include items merely mentioned in passing without positive sentiment. Do not include self-promotions or advertisements.
+Recipes shared in cooking newsletters count as recommendations with type "recipe" — the recipe name is the title and the newsletter/author is the creator.
+
+Only include items the author is clearly recommending, endorsing, or sharing. Do not include items merely mentioned in passing without positive sentiment. Do not include paid advertisements.
 
 Respond in JSON format:
 {

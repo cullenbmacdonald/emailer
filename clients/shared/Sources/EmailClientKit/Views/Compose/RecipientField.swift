@@ -2,7 +2,6 @@ import SwiftUI
 
 /// A text field that shows email recipients as token chips with autocomplete suggestions.
 public struct RecipientField: View {
-    let label: String
     @Binding var recipients: [String]
     let suggestions: [ContactSuggestion]
     let onQueryChanged: (String) -> Void
@@ -12,12 +11,10 @@ public struct RecipientField: View {
     @FocusState private var isFocused: Bool
 
     public init(
-        label: String,
         recipients: Binding<[String]>,
         suggestions: [ContactSuggestion] = [],
         onQueryChanged: @escaping (String) -> Void = { _ in }
     ) {
-        self.label = label
         self._recipients = recipients
         self.suggestions = suggestions
         self.onQueryChanged = onQueryChanged
@@ -25,40 +22,34 @@ public struct RecipientField: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .top, spacing: 4) {
-                Text(label)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 40, alignment: .trailing)
-
-                RecipientFlowLayout(spacing: 4) {
-                    ForEach(recipients, id: \.self) { recipient in
-                        RecipientChip(email: recipient) {
-                            recipients.removeAll { $0 == recipient }
-                        }
+            RecipientFlowLayout(spacing: 4) {
+                ForEach(recipients, id: \.self) { recipient in
+                    RecipientChip(email: recipient) {
+                        recipients.removeAll { $0 == recipient }
                     }
-
-                    TextField("", text: $currentInput)
-                        .textFieldStyle(.plain)
-                        .focused($isFocused)
-                        .frame(minWidth: 100)
-                        #if os(macOS)
-                        .onSubmit { commitCurrentInput() }
-                        #endif
-                        .onChange(of: currentInput) { _, newValue in
-                            onQueryChanged(newValue)
-                            showSuggestions = !newValue.isEmpty && !suggestions.isEmpty
-                        }
-                        .onChange(of: isFocused) { _, focused in
-                            if !focused { commitCurrentInput() }
-                        }
-                        #if os(iOS)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.done)
-                        .onSubmit { commitCurrentInput() }
-                        #endif
                 }
+
+                TextField("Add recipient...", text: $currentInput)
+                    .textFieldStyle(.plain)
+                    .focused($isFocused)
+                    .frame(minWidth: 150)
+                    #if os(macOS)
+                    .onSubmit { commitCurrentInput() }
+                    #endif
+                    .onChange(of: currentInput) { _, newValue in
+                        onQueryChanged(newValue)
+                        showSuggestions = !newValue.isEmpty && !suggestions.isEmpty
+                    }
+                    .onChange(of: isFocused) { _, focused in
+                        if !focused { commitCurrentInput() }
+                    }
+                    #if os(iOS)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.done)
+                    .onSubmit { commitCurrentInput() }
+                    #endif
             }
 
             if showSuggestions && !suggestions.isEmpty {
@@ -90,7 +81,6 @@ public struct RecipientField: View {
                 .background(.regularMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .shadow(radius: 4)
-                .padding(.leading, 44)
             }
         }
     }

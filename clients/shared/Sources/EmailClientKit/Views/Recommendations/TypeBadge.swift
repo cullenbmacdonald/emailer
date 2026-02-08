@@ -12,6 +12,7 @@ public extension RecommendationType {
         case .music: "music.note"
         case .article: "doc.text.fill"
         case .podcast: "mic.fill"
+        case .recipe: "fork.knife"
         case .other: "star.fill"
         }
     }
@@ -24,6 +25,7 @@ public extension RecommendationType {
         case .music: .recMusic
         case .article: .recArticle
         case .podcast: .recPodcast
+        case .recipe: .orange
         case .other: .recOther
         }
     }
@@ -37,6 +39,7 @@ public extension RecommendationType {
         case .music: "Music"
         case .article: "Articles"
         case .podcast: "Podcasts"
+        case .recipe: "Recipes"
         case .other: "Other"
         }
     }
@@ -50,6 +53,7 @@ public extension RecommendationType {
         case .music: "Music"
         case .article: "Article"
         case .podcast: "Podcast"
+        case .recipe: "Recipe"
         case .other: "Other"
         }
     }

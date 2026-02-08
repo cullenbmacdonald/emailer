@@ -9,6 +9,7 @@ import (
 	"github.com/cullenbmacdonald/emailer/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/rs/zerolog/log"
 )
 
 // handleComposeSend handles POST /api/v1/compose/send.
@@ -43,7 +44,8 @@ func (s *Server) handleComposeSend() http.HandlerFunc {
 
 		resp, err := s.sender.Send(r.Context(), req.AccountID, req)
 		if err != nil {
-			WriteError(w, http.StatusInternalServerError, models.ErrCodeInternalError, "failed to send email")
+			log.Error().Err(err).Str("account_id", req.AccountID).Msg("failed to send email")
+			WriteError(w, http.StatusInternalServerError, models.ErrCodeInternalError, "failed to send email: "+err.Error())
 			return
 		}
 

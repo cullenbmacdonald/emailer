@@ -21,45 +21,65 @@ public struct ComposeView: View {
 
     public var body: some View {
         NavigationStack {
-            Form {
-                // From account picker
+            #if os(macOS)
+            macOSBody
+            #else
+            iOSBody
+            #endif
+        }
+    }
+
+    // MARK: - macOS
+
+    #if os(macOS)
+    private var macOSBody: some View {
+        VStack(spacing: 0) {
+            // Header fields
+            VStack(spacing: 8) {
+                // From
                 if accounts.count > 1 {
-                    Picker("From", selection: $store.accountID) {
-                        ForEach(accounts) { account in
-                            Text(account.emailAddress)
-                                .tag(account.id)
+                    fieldRow("From") {
+                        Picker("", selection: $store.accountID) {
+                            ForEach(accounts) { account in
+                                Text(account.emailAddress).tag(account.id)
+                            }
                         }
+                        .labelsHidden()
                     }
                 } else if let account = accounts.first {
-                    LabeledContent("From") {
+                    fieldRow("From") {
                         Text(account.emailAddress)
                             .foregroundStyle(.secondary)
                     }
                 }
 
-                // Recipients
-                Section {
+                Divider()
+
+                // To
+                fieldRow("To") {
                     RecipientField(
-                        label: "To:",
                         recipients: $store.to,
                         suggestions: toSuggestions,
                         onQueryChanged: { query in
                             Task { toSuggestions = await contactsProvider.search(query: query) }
                         }
                     )
+                }
 
-                    if store.showCcBcc {
+                if store.showCcBcc {
+                    Divider()
+                    fieldRow("Cc") {
                         RecipientField(
-                            label: "Cc:",
                             recipients: $store.cc,
                             suggestions: ccSuggestions,
                             onQueryChanged: { query in
                                 Task { ccSuggestions = await contactsProvider.search(query: query) }
                             }
                         )
-
+                    }
+                    Divider()
+                    fieldRow("Bcc") {
                         RecipientField(
-                            label: "Bcc:",
                             recipients: $store.bcc,
                             suggestions: bccSuggestions,
                             onQueryChanged: { query in
@@ -69,73 +89,161 @@ public struct ComposeView: View {
                     }
                 }
 
+                Divider()
+
                 // Subject
-                TextField("Subject", text: $store.subject)
+                fieldRow("Subject") {
+                    TextField("", text: $store.subject)
+                        .textFieldStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
 
-                // Body
+            Divider()
+
+            // Body
+            TextEditor(text: $store.body)
+                .font(.body)
+                .padding(8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // Error
+            if let error = store.sendError {
+                HStack {
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+            }
+        }
+        .frame(minWidth: 640, idealWidth: 720, minHeight: 480, idealHeight: 560)
+        .navigationTitle(navigationTitle)
+        .toolbar { composeToolbar }
+        .task { _ = await contactsProvider.requestAccess() }
+    }
+
+    @ViewBuilder
+    private func fieldRow<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(label)
+                .foregroundStyle(.secondary)
+                .frame(width: 50, alignment: .trailing)
+            content()
+        }
+    }
+    #endif
+
+    // MARK: - iOS
+
+    #if os(iOS)
+    private var iOSBody: some View {
+        Form {
+            if accounts.count > 1 {
+                Picker("From", selection: $store.accountID) {
+                    ForEach(accounts) { account in
+                        Text(account.emailAddress).tag(account.id)
+                    }
+                }
+            } else if let account = accounts.first {
+                LabeledContent("From") {
+                    Text(account.emailAddress)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section {
+                RecipientField(
+                    recipients: $store.to,
+                    suggestions: toSuggestions,
+                    onQueryChanged: { query in
+                        Task { toSuggestions = await contactsProvider.search(query: query) }
+                    }
+                )
+
+                if store.showCcBcc {
+                    RecipientField(
+                        recipients: $store.cc,
+                        suggestions: ccSuggestions,
+                        onQueryChanged: { query in
+                            Task { ccSuggestions = await contactsProvider.search(query: query) }
+                        }
+                    )
+                    RecipientField(
+                        recipients: $store.bcc,
+                        suggestions: bccSuggestions,
+                        onQueryChanged: { query in
+                            Task { bccSuggestions = await contactsProvider.search(query: query) }
+                        }
+                    )
+                }
+            }
+
+            TextField("Subject", text: $store.subject)
+
+            Section {
+                TextEditor(text: $store.body)
+                    .frame(minHeight: 200)
+            }
+
+            if let error = store.sendError {
                 Section {
-                    TextEditor(text: $store.body)
-                        .frame(minHeight: 200)
-                        #if os(macOS)
-                        .font(.body)
-                        #endif
-                }
-
-                // Error
-                if let error = store.sendError {
-                    Section {
-                        Label(error, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.red)
-                    }
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
                 }
             }
-            .formStyle(.grouped)
-            .navigationTitle(navigationTitle)
+        }
+        .formStyle(.grouped)
+        .navigationTitle(navigationTitle)
+        .toolbar { composeToolbar }
+        .task { _ = await contactsProvider.requestAccess() }
+    }
+    #endif
+
+    // MARK: - Shared
+
+    @ToolbarContentBuilder
+    private var composeToolbar: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Discard") {
+                Task {
+                    await store.deleteDraft(using: apiClient)
+                    dismiss()
+                }
+            }
+            .disabled(store.isSending)
+        }
+
+        ToolbarItem(placement: .primaryAction) {
+            if !store.showCcBcc {
+                Button("Cc/Bcc") {
+                    store.showCcBcc = true
+                }
+            }
+        }
+
+        ToolbarItem(placement: .confirmationAction) {
+            Button {
+                Task {
+                    await store.send(using: apiClient)
+                    if store.didSend { dismiss() }
+                }
+            } label: {
+                if store.isSending {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Label("Send", systemImage: "paperplane.fill")
+                }
+            }
+            .disabled(store.to.isEmpty || store.isSending)
             #if os(macOS)
-            .frame(minWidth: 500, minHeight: 400)
+            .keyboardShortcut(.return, modifiers: .command)
             #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Discard") {
-                        Task {
-                            await store.deleteDraft(using: apiClient)
-                            dismiss()
-                        }
-                    }
-                    .disabled(store.isSending)
-                }
-
-                ToolbarItem(placement: .primaryAction) {
-                    if !store.showCcBcc {
-                        Button("Cc/Bcc") {
-                            store.showCcBcc = true
-                        }
-                    }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        Task {
-                            await store.send(using: apiClient)
-                            if store.didSend { dismiss() }
-                        }
-                    } label: {
-                        if store.isSending {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Label("Send", systemImage: "paperplane.fill")
-                        }
-                    }
-                    .disabled(store.to.isEmpty || store.isSending)
-                    #if os(macOS)
-                    .keyboardShortcut(.return, modifiers: .command)
-                    #endif
-                }
-            }
-            .task {
-                _ = await contactsProvider.requestAccess()
-            }
         }
     }
 

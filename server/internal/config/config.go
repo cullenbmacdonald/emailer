@@ -199,6 +199,7 @@ func Load(path string) (*Config, error) {
 	}
 
 	applyEnvOverrides(&cfg)
+	applyProviderDefaults(&cfg)
 
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("config validation: %w", err)
@@ -230,6 +231,41 @@ func applyEnvOverrides(cfg *Config) {
 	}
 	if v := os.Getenv("EMAILER_LOG_LEVEL"); v != "" {
 		cfg.Logging.Level = v
+	}
+}
+
+// providerDefaults maps provider names to their default IMAP/SMTP settings.
+var providerDefaults = map[string]struct {
+	IMAPHost string
+	IMAPPort int
+	SMTPHost string
+	SMTPPort int
+}{
+	"gmail":        {"imap.gmail.com", 993, "smtp.gmail.com", 587},
+	"icloud":       {"imap.mail.me.com", 993, "smtp.mail.me.com", 587},
+	"microsoft365": {"outlook.office365.com", 993, "smtp.office365.com", 587},
+	"fastmail":     {"imap.fastmail.com", 993, "smtp.fastmail.com", 587},
+}
+
+// applyProviderDefaults fills in missing IMAP/SMTP host/port from known provider defaults.
+func applyProviderDefaults(cfg *Config) {
+	for i := range cfg.Accounts {
+		defaults, ok := providerDefaults[cfg.Accounts[i].Provider]
+		if !ok {
+			continue
+		}
+		if cfg.Accounts[i].IMAP.Host == "" {
+			cfg.Accounts[i].IMAP.Host = defaults.IMAPHost
+		}
+		if cfg.Accounts[i].IMAP.Port == 0 {
+			cfg.Accounts[i].IMAP.Port = defaults.IMAPPort
+		}
+		if cfg.Accounts[i].SMTP.Host == "" {
+			cfg.Accounts[i].SMTP.Host = defaults.SMTPHost
+		}
+		if cfg.Accounts[i].SMTP.Port == 0 {
+			cfg.Accounts[i].SMTP.Port = defaults.SMTPPort
+		}
 	}
 }
 

@@ -24,6 +24,7 @@ public struct RecommendationFilterBar: View {
         (.music, "Music", "music.note"),
         (.article, "Articles", "doc.text.fill"),
         (.podcast, "Podcasts", "mic.fill"),
+        (.recipe, "Recipes", "fork.knife"),
         (.other, "Other", "star.fill")
     ]
 

@@ -12,6 +12,7 @@ var llmTypeMap = map[string]string{
 	"music":    models.RecTypeMusic,
 	"article":  models.RecTypeArticle,
 	"podcast":  models.RecTypePodcast,
+	"recipe":   models.RecTypeRecipe,
 	"other":    models.RecTypeOther,
 }
 

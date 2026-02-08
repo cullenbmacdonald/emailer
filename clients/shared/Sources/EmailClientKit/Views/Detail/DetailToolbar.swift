@@ -12,53 +12,56 @@ public enum DetailAction: String, CaseIterable, Sendable {
 }
 
 /// Toolbar content for the email detail view.
-/// Uses glass-style buttons with SF Symbols per the design system.
-public struct DetailToolbar: View {
+/// Provides individual toolbar items so each button gets a proper hover tooltip.
+public struct DetailToolbar: ToolbarContent {
     public let onAction: (DetailAction) -> Void
 
     public init(onAction: @escaping (DetailAction) -> Void) {
         self.onAction = onAction
     }
 
-    public var body: some View {
-        HStack(spacing: Spacing.sm) {
-            // Reply group -- morphs as connected glass group
-            GlassToolbarGroup {
-                toolbarButton("Reply", icon: "arrowshape.turn.up.left", action: .reply)
-                toolbarButton("Reply All", icon: "arrowshape.turn.up.left.2", action: .replyAll)
-                toolbarButton("Forward", icon: "arrowshape.turn.up.right", action: .forward)
+    public var body: some ToolbarContent {
+        ToolbarItem(placement: .automatic) {
+            Button { onAction(.reply) } label: {
+                Label("Reply", systemImage: "arrowshape.turn.up.left")
             }
-
-            // Action group -- morphs as connected glass group
-            GlassToolbarGroup {
-                toolbarButton("Archive", icon: "archivebox", action: .archive)
-                toolbarButton("Snooze", icon: "clock", action: .snooze)
-                toolbarButton("Move", icon: "folder", action: .move)
+            .help("Reply")
+        }
+        ToolbarItem(placement: .automatic) {
+            Button { onAction(.replyAll) } label: {
+                Label("Reply All", systemImage: "arrowshape.turn.up.left.2")
             }
-
-            // Trash -- standalone glass button
-            toolbarButton("Trash", icon: "trash", action: .trash, tint: .destructive)
-                .buttonStyle(.glass(tint: .destructive))
+            .help("Reply All")
         }
-    }
-
-    @ViewBuilder
-    private func toolbarButton(
-        _ label: String,
-        icon: String,
-        action: DetailAction,
-        tint: Color? = nil
-    ) -> some View {
-        Button {
-            onAction(action)
-        } label: {
-            Label(label, systemImage: icon)
-                .labelStyle(.iconOnly)
-                .foregroundStyle(tint ?? .primary)
-                .padding(.horizontal, Spacing.xs)
-                .padding(.vertical, Spacing.xs)
+        ToolbarItem(placement: .automatic) {
+            Button { onAction(.forward) } label: {
+                Label("Forward", systemImage: "arrowshape.turn.up.right")
+            }
+            .help("Forward")
         }
-        .buttonStyle(.borderless)
-        .help(label)
+        ToolbarItem(placement: .automatic) {
+            Button { onAction(.archive) } label: {
+                Label("Archive", systemImage: "archivebox")
+            }
+            .help("Archive")
+        }
+        ToolbarItem(placement: .automatic) {
+            Button { onAction(.snooze) } label: {
+                Label("Snooze", systemImage: "clock")
+            }
+            .help("Snooze")
+        }
+        ToolbarItem(placement: .automatic) {
+            Button { onAction(.move) } label: {
+                Label("Move", systemImage: "folder")
+            }
+            .help("Move")
+        }
+        ToolbarItem(placement: .automatic) {
+            Button { onAction(.trash) } label: {
+                Label("Trash", systemImage: "trash")
+            }
+            .help("Trash")
+        }
     }
 }

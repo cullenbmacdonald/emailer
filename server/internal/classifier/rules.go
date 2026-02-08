@@ -27,6 +27,7 @@ var knownNewsletterDomains = map[string]bool{
 	"getresponse.com":     true,
 	"drip.com":            true,
 	"tinyletter.com":      true,
+	"nytimes.com":         true,
 }
 
 // Transactional subject patterns.
