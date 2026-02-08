@@ -341,6 +341,39 @@ func (s *EmailStore) DeleteEmail(ctx context.Context, id string) error {
 	return nil
 }
 
+// DeleteFilteredEmailsBefore deletes emails classified as "filtered" with
+// received_at older than the given cutoff time. It returns the IDs of deleted emails.
+func (s *EmailStore) DeleteFilteredEmailsBefore(ctx context.Context, cutoff time.Time) ([]string, error) {
+	query := `
+		DELETE FROM emails
+		WHERE id IN (
+			SELECT e.id FROM emails e
+			JOIN classifications c ON c.email_id = e.id
+			WHERE c.classification = 'filtered'
+			AND e.received_at < $1
+		)
+		RETURNING id`
+
+	rows, err := s.pool.Query(ctx, query, cutoff)
+	if err != nil {
+		return nil, fmt.Errorf("delete filtered emails before %s: %w", cutoff.Format(time.RFC3339), err)
+	}
+	defer rows.Close()
+
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scan deleted email id: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate deleted email ids: %w", err)
+	}
+	return ids, nil
+}
+
 // CountEmailsByView returns per-view email counts for an account.
 func (s *EmailStore) CountEmailsByView(ctx context.Context, accountID string) (*models.AccountCounts, error) {
 	query := `
@@ -638,6 +671,16 @@ func populateEmail(
 }
 
 // Helper functions for dereferencing nullable scan values.
+
+// UpdateRecommendationCount sets the recommendation_count on an email.
+func (s *EmailStore) UpdateRecommendationCount(ctx context.Context, emailID string, count int) error {
+	query := `UPDATE emails SET recommendation_count = $2 WHERE id = $1`
+	_, err := s.pool.Exec(ctx, query, emailID, count)
+	if err != nil {
+		return fmt.Errorf("update recommendation count for %s: %w", emailID, err)
+	}
+	return nil
+}
 
 func derefStr(p *string) string {
 	if p != nil {
