@@ -36,6 +36,25 @@ struct IOSEmailDetailView: View {
                 emailStore.clearDetail()
             }
         }
+        .sheet(isPresented: $actionHandler.showSnoozePicker) {
+            SnoozePickerSheet_iOS(
+                onSnooze: { date in
+                    if let targetID = actionHandler.snoozeTargetEmailID {
+                        actionHandler.snooze(
+                            emailID: targetID,
+                            until: date,
+                            emailStore: emailStore,
+                            apiClient: appState.apiClient
+                        )
+                        dismiss()
+                    }
+                },
+                onDismiss: {
+                    actionHandler.showSnoozePicker = false
+                    actionHandler.snoozeTargetEmailID = nil
+                }
+            )
+        }
         .overlay(alignment: .bottom) {
             if let toast = actionHandler.undoToast {
                 UndoToast(message: toast.message) {
@@ -118,7 +137,7 @@ struct IOSEmailDetailView: View {
     @ViewBuilder
     private func snoozeButton(_ detail: EmailDetail) -> some View {
         Button {
-            // Will present snooze picker sheet (I-2.4)
+            actionHandler.beginSnooze(emailID: detail.id)
         } label: {
             Label("Snooze", systemImage: "clock")
         }

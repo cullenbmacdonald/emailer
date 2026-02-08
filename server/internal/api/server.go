@@ -24,6 +24,8 @@ type Server struct {
 	buildInfo  BuildInfo
 	startTime  time.Time
 
+	hub *Hub
+
 	emails          EmailStore
 	classifications ClassificationStore
 	snoozes         SnoozeStore
@@ -57,6 +59,7 @@ func NewServer(addr string, pool *pgxpool.Pool, authToken string, corsOrigins []
 		pool:      pool,
 		buildInfo: info,
 		startTime: time.Now(),
+		hub:       NewHub(),
 	}
 
 	if len(deps) > 0 {
@@ -98,6 +101,11 @@ func (s *Server) Start() <-chan error {
 		}
 	}()
 	return errCh
+}
+
+// Hub returns the WebSocket hub for broadcasting events.
+func (s *Server) Hub() *Hub {
+	return s.hub
 }
 
 // Shutdown gracefully stops the server with the given context deadline.

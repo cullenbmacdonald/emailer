@@ -29,6 +29,9 @@ func (s *Server) routes(authToken string, corsOrigins []string) *chi.Mux {
 	// Health endpoint (no auth required)
 	r.Get("/health", s.handleHealth())
 
+	// WebSocket endpoint (authenticates via query param, not Bearer header)
+	r.Get("/api/v1/ws", s.handleWebSocket(authToken))
+
 	// API v1 routes (auth required)
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(AuthMiddleware(authToken))
