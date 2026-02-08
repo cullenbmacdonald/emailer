@@ -22,6 +22,9 @@ public final class AppState {
     /// Whether the app is connected to the server.
     public var isConnected: Bool = false
 
+    /// The API client, available after server discovery.
+    public var apiClient: APIClient?
+
     /// A user-facing error message, if any.
     public var errorMessage: String?
 

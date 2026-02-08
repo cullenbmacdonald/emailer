@@ -58,7 +58,7 @@ public struct ContentView: View {
         .onChange(of: appState.selectedEmailID) { _, newID in
             if let id = newID {
                 Task {
-                    await emailStore.loadDetail(for: id, using: nil)
+                    await emailStore.loadDetail(for: id, using: appState.apiClient)
                 }
             } else {
                 emailStore.clearDetail()

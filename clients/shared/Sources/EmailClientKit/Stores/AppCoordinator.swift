@@ -68,6 +68,7 @@ public final class AppCoordinator {
 
             let client = APIClient(baseURL: serverURL, token: "change-me-to-a-secret")
             self.apiClient = client
+            appState.apiClient = client
             appState.isConnected = true
             appState.errorMessage = nil
 

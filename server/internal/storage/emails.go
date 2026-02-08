@@ -136,10 +136,11 @@ func (s *EmailStore) GetEmailDetail(ctx context.Context, id string) (*models.Ema
 	}
 
 	detail := &models.EmailDetail{
-		ID:       email.ID,
-		Email:    *email,
-		HTMLBody: htmlBody,
-		TextBody: textBody,
+		ID:          email.ID,
+		Email:       *email,
+		HTMLBody:    htmlBody,
+		TextBody:    textBody,
+		Attachments: []models.Attachment{},
 	}
 	return detail, nil
 }

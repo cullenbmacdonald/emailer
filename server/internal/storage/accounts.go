@@ -21,7 +21,7 @@ func NewAccountStore(pool *pgxpool.Pool) *AccountStore {
 // ListAccounts returns all accounts.
 func (s *AccountStore) ListAccounts(ctx context.Context) ([]models.Account, error) {
 	query := `
-		SELECT id, name, email, COALESCE(type, 'personal'), color, created_at, updated_at
+		SELECT id, name, email, COALESCE(account_type, 'personal'), color, created_at, updated_at
 		FROM accounts
 		ORDER BY name ASC`
 
@@ -54,7 +54,7 @@ func (s *AccountStore) ListAccounts(ctx context.Context) ([]models.Account, erro
 // GetAccount returns a single account by ID.
 func (s *AccountStore) GetAccount(ctx context.Context, id string) (*models.Account, error) {
 	query := `
-		SELECT id, name, email, COALESCE(type, 'personal'), color, created_at, updated_at
+		SELECT id, name, email, COALESCE(account_type, 'personal'), color, created_at, updated_at
 		FROM accounts
 		WHERE id = $1`
 
