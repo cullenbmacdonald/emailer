@@ -28,11 +28,16 @@ type Classifier interface {
 	Classify(ctx context.Context, input *classifier.EmailInput) *classifier.ClassificationResult
 }
 
+// NewsletterCallback is called when an email is classified as a newsletter.
+// It receives the email and its text body for downstream processing (e.g., recommendation extraction).
+type NewsletterCallback func(email *models.Email, textBody string)
+
 // EmailSyncer coordinates fetching new emails from IMAP and storing them in the database.
 type EmailSyncer struct {
-	pool       *pgxpool.Pool
-	classifier Classifier
-	logger     zerolog.Logger
+	pool         *pgxpool.Pool
+	classifier   Classifier
+	onNewsletter NewsletterCallback
+	logger       zerolog.Logger
 }
 
 // NewEmailSyncer creates a new syncer that stores fetched emails.
@@ -46,6 +51,11 @@ func NewEmailSyncer(pool *pgxpool.Pool, logger zerolog.Logger) *EmailSyncer {
 // SetClassifier configures the classification pipeline.
 func (s *EmailSyncer) SetClassifier(c Classifier) {
 	s.classifier = c
+}
+
+// SetNewsletterCallback sets a callback invoked when an email is classified as a newsletter.
+func (s *EmailSyncer) SetNewsletterCallback(cb NewsletterCallback) {
+	s.onNewsletter = cb
 }
 
 // SyncFolder fetches new messages from the given folder and stores them.
@@ -122,6 +132,11 @@ func (s *EmailSyncer) SyncFolder(ctx context.Context, client *imapclient.Client,
 				logger.Warn().Err(classErr).Str("email_id", stored.ID).Msg("failed to store classification")
 			} else {
 				logger.Info().Str("email_id", stored.ID).Str("class", cr.Classification).Float64("confidence", cr.Confidence).Msg("classified")
+
+				// Queue newsletter emails for recommendation extraction.
+				if cr.Classification == models.ClassNewsletter && s.onNewsletter != nil {
+					s.onNewsletter(stored, fr.TextBody)
+				}
 			}
 		}
 	}
@@ -165,9 +180,9 @@ func searchNewUIDs(client *imapclient.Client, lastUID imap.UID) ([]imap.UID, err
 		UID: []imap.UIDSet{uidSet},
 	}
 
-	// On initial sync, limit to last 30 days.
+	// On initial sync, limit to last 90 days.
 	if lastUID == 0 {
-		since := time.Now().AddDate(0, 0, -30)
+		since := time.Now().AddDate(0, 0, -90)
 		criteria.Since = since
 	}
 

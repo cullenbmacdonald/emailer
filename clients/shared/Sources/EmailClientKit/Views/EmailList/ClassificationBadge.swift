@@ -37,7 +37,7 @@ public struct ClassificationBadge: View {
     /// Abbreviated label for narrow screens.
     public var abbreviatedLabel: String {
         switch classificationType {
-        case .actionRequired: "Action Req."
+        case .actionRequired: "Action"
         case .newsletter: "News."
         case .transactional: "Trans."
         case .filtered: "Filt."

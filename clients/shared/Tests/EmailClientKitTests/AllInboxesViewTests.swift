@@ -17,7 +17,7 @@ struct AllInboxesViewTests {
 
     @Test("ClassificationBadge has correct abbreviated labels")
     func classificationBadgeAbbreviatedLabels() {
-        #expect(ClassificationBadge(classificationType: .actionRequired).abbreviatedLabel == "Action Req.")
+        #expect(ClassificationBadge(classificationType: .actionRequired).abbreviatedLabel == "Action")
         #expect(ClassificationBadge(classificationType: .newsletter).abbreviatedLabel == "News.")
         #expect(ClassificationBadge(classificationType: .transactional).abbreviatedLabel == "Trans.")
         #expect(ClassificationBadge(classificationType: .filtered).abbreviatedLabel == "Filt.")

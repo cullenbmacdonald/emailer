@@ -5,8 +5,10 @@ import EmailClientKit
 /// The root TabView for iPhone. Four tabs: Action, Reading, Recs, More.
 /// Action Queue tab shows a badge with unread count from AppState.
 /// Reading Queue has NO badge (ADHD-friendly design).
+/// A newspaper toolbar button in each tab presents the Daily Digest as a sheet.
 public struct MainTabView: View {
     @Environment(AppState.self) private var appState
+    @Environment(DigestStore.self) private var digestStore
 
     public init() {}
 
@@ -23,6 +25,7 @@ public struct MainTabView: View {
                         .navigationDestination(for: String.self) { emailID in
                             IOSEmailDetailView(emailID: emailID)
                         }
+                        .toolbar { digestToolbarItem }
                 }
             }
             .badge(appState.actionQueueUnreadCount)
@@ -34,6 +37,7 @@ public struct MainTabView: View {
             ) {
                 NavigationStack {
                     IOSPlaceholderView(title: "Reading Queue", icon: "book", phase: "Phase 2")
+                        .toolbar { digestToolbarItem }
                 }
             }
             // No badge -- Reading Queue should not create urgency
@@ -44,7 +48,11 @@ public struct MainTabView: View {
                 value: .recommendations
             ) {
                 NavigationStack {
-                    IOSPlaceholderView(title: "Recommendations", icon: "star", phase: "Phase 3")
+                    IOSRecommendationListView()
+                        .navigationDestination(for: String.self) { recID in
+                            IOSRecommendationDetailView(recommendationID: recID)
+                        }
+                        .toolbar { digestToolbarItem }
                 }
             }
 
@@ -55,8 +63,57 @@ public struct MainTabView: View {
             ) {
                 NavigationStack {
                     MoreView()
+                        .toolbar { digestToolbarItem }
                 }
             }
+        }
+        .tabBarMinimizeBehavior(.onScrollDown)
+        .safeAreaInset(edge: .top) {
+            if appState.isOffline {
+                OfflineBanner(pendingActionCount: appState.pendingActionCount)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: appState.isOffline)
+        .sheet(isPresented: $appState.showDigestSheet) {
+            DigestSheetView()
+                .environment(appState as AppState)
+                .environment(digestStore as DigestStore)
+        }
+    }
+
+    private var digestToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button {
+                appState.showDigestSheet = true
+            } label: {
+                Image(systemName: digestStore.hasNewDigest ? "newspaper.fill" : "newspaper")
+            }
+            .accessibilityLabel("Daily Digest")
+        }
+    }
+}
+
+/// Sheet wrapper for DigestView on iPhone.
+/// Presented with .large detent. Marks digest as read on appear.
+struct DigestSheetView: View {
+    @Environment(AppState.self) private var appState
+    @Environment(DigestStore.self) private var digestStore
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            DigestView()
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+        }
+        .presentationDetents([.large])
+        .onAppear {
+            digestStore.markAsRead()
+            appState.hasNewDigest = false
         }
     }
 }

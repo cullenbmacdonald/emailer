@@ -44,7 +44,7 @@ Respond in JSON format:
 }`
 
 // maxBodyLength is the maximum body length sent to the LLM.
-const maxBodyLength = 2000
+const maxBodyLength = 6000
 
 // BuildClassificationPrompt builds the user prompt for email classification.
 func BuildClassificationPrompt(req ClassifyRequest) string {

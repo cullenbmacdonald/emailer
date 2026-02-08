@@ -36,10 +36,8 @@ public struct ActionQueueView: View {
             }
         }
         #else
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                AccountFilterMenu(accountFilter: $state.accountFilter)
-            }
+        .safeAreaInset(edge: .top) {
+            AccountFilterPillBar(selection: $state.accountFilter)
         }
         .refreshable {
             await refreshActionQueue()

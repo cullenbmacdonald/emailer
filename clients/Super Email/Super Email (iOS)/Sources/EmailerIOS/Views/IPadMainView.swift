@@ -10,7 +10,12 @@ struct IPadMainView: View {
 
     var body: some View {
         @Bindable var appState = appState
-        NavigationSplitView {
+        VStack(spacing: 0) {
+            if appState.isOffline {
+                OfflineBanner(pendingActionCount: appState.pendingActionCount)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            NavigationSplitView {
             SidebarView(
                 selection: $appState.selectedView,
                 actionQueueCount: emailStore.actionQueueCount,
@@ -22,6 +27,8 @@ struct IPadMainView: View {
         } detail: {
             detailColumn
         }
+        }
+        .animation(.easeInOut(duration: 0.3), value: appState.isOffline)
     }
 
     @ViewBuilder
@@ -79,13 +86,26 @@ struct IPadMainView: View {
         case .readingQueue:
             IOSPlaceholderView(title: "Reading Queue", icon: "book", phase: "Phase 2")
         case .recommendations:
-            IOSPlaceholderView(title: "Recommendations", icon: "star", phase: "Phase 3")
+            IOSRecommendationListView()
+                .navigationDestination(for: String.self) { recID in
+                    IOSRecommendationDetailView(recommendationID: recID)
+                }
         case .filtered:
-            IOSPlaceholderView(title: "Filtered", icon: "shield", phase: "Phase 3")
+            FilteredView()
+                .navigationDestination(for: String.self) { emailID in
+                    IOSFilteredDetailView(emailID: emailID)
+                }
         case .allInboxes:
-            IOSPlaceholderView(title: "All Inboxes", icon: "tray.2", phase: "Phase 3")
+            AllInboxesView()
+                .navigationDestination(for: String.self) { emailID in
+                    IOSEmailDetailView(emailID: emailID)
+                }
         case .dailyDigest:
-            IOSPlaceholderView(title: "Daily Digest", icon: "newspaper", phase: "Phase 3")
+            DigestView()
+                .onAppear {
+                    digestStore.markAsRead()
+                    appState.hasNewDigest = false
+                }
         }
     }
 }

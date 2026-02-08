@@ -105,6 +105,7 @@ public struct GlassButtonStyle: ButtonStyle {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
             .overlay(tintOverlay(configuration: configuration))
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .brightness(configuration.isPressed ? 0.08 : 0)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 

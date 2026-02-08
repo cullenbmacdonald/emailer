@@ -21,7 +21,7 @@ var classificationMap = map[string]string{
 }
 
 // jsonBlockRe matches JSON inside markdown code blocks.
-var jsonBlockRe = regexp.MustCompile("(?s)```(?:json)?\\s*\\n?(\\{.*?\\})\\s*```")
+var jsonBlockRe = regexp.MustCompile("(?s)```(?:json)?\\s*\\n?(\\{.*\\})\\s*```")
 
 // classRe extracts classification from text when JSON parsing fails.
 var classRe = regexp.MustCompile(`(?i)"?classification"?\s*[:=]\s*"?(ACTION|NEWSLETTER|FILTERED|TRANSACTIONAL)"?`)

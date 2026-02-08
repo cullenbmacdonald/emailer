@@ -42,6 +42,8 @@ type ollamaMessage struct {
 
 type ollamaOptions struct {
 	Temperature float64 `json:"temperature"`
+	NumPredict  int     `json:"num_predict,omitempty"`
+	NumCtx      int     `json:"num_ctx,omitempty"`
 }
 
 // ollamaChatResponse is the response from Ollama's /api/chat endpoint.
@@ -83,7 +85,7 @@ func (o *OllamaProvider) ExtractRecommendations(ctx context.Context, req Extract
 			{Role: "user", Content: prompt},
 		},
 		Format:  "json",
-		Options: ollamaOptions{Temperature: 0.2},
+		Options: ollamaOptions{Temperature: 0.2, NumPredict: 4096, NumCtx: 8192},
 		Stream:  false,
 	}
 

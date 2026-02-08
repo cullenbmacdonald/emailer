@@ -39,10 +39,8 @@ public struct FilteredView: View {
             }
         }
         #else
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                AccountFilterMenu(accountFilter: $state.accountFilter)
-            }
+        .safeAreaInset(edge: .top) {
+            AccountFilterPillBar(selection: $state.accountFilter)
         }
         .refreshable {
             await refreshFiltered()
@@ -185,7 +183,7 @@ public struct FilteredView: View {
         NavigationLink(value: email.id) {
             row
         }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
             Button {
                 rescueTargetID = email.id
                 showRescueSheet = true
@@ -194,19 +192,7 @@ public struct FilteredView: View {
             }
             .tint(Color.accentColor)
         }
-        .swipeActions(edge: .leading, allowsFullSwipe: false) {
-            Button {
-                actionHandler.confirmSpam(
-                    emailID: email.id,
-                    emailStore: emailStore,
-                    apiClient: appState.apiClient
-                )
-            } label: {
-                Label("Confirm Spam", systemImage: "xmark.shield")
-            }
-            .tint(Color.filteredColor)
-        }
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
                 actionHandler.deleteNow(
                     emailID: email.id,
@@ -217,6 +203,18 @@ public struct FilteredView: View {
                 Label("Delete", systemImage: "trash")
             }
             .tint(Color.destructive)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button {
+                actionHandler.confirmSpam(
+                    emailID: email.id,
+                    emailStore: emailStore,
+                    apiClient: appState.apiClient
+                )
+            } label: {
+                Label("Confirm Spam", systemImage: "xmark.shield")
+            }
+            .tint(Color.filteredColor)
         }
         .contextMenu {
             filteredContextMenu(email: email)

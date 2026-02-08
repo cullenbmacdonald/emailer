@@ -31,7 +31,11 @@ public struct FilteredRowView: View {
         }
         .padding(.horizontal, ListRowMetrics.horizontalPadding)
         .padding(.vertical, ListRowMetrics.verticalPadding)
+        #if os(iOS)
+        .frame(minHeight: 80)
+        #else
         .frame(minHeight: 72)
+        #endif
         .background(rowBackground)
         .contentShape(Rectangle())
         #if os(macOS)

@@ -74,12 +74,29 @@ public final class AppCoordinator {
     #if os(iOS)
     /// Handle app moving to background: disconnect WebSocket, save state.
     public func didEnterBackground() {
-        // TODO: Disconnect WebSocket, save state to local cache
+        logger.info("App entering background — disconnecting WebSocket and caching data")
+        eventRoutingTask?.cancel()
+        eventRoutingTask = nil
+        reconnectionTask?.cancel()
+        reconnectionTask = nil
+        Task {
+            await webSocketManager?.disconnect()
+            await cacheCurrentData()
+        }
     }
 
     /// Handle app returning to foreground: reconnect and sync.
     public func willEnterForeground() async {
-        // TODO: Fetch changes since last sync, reconnect WebSocket
+        logger.info("App entering foreground — checking connectivity")
+        await updatePendingCount()
+
+        if apiClient != nil {
+            // Try to reconnect WebSocket and refresh data
+            await attemptReconnection()
+        } else {
+            // No API client yet — try full connection
+            await connectToServer()
+        }
     }
     #endif
 
@@ -280,10 +297,11 @@ public final class AppCoordinator {
         async let actionResult: () = fetchEmailView(.actionQueue, client: client)
         async let readingResult: () = fetchEmailView(.readingQueue, client: client)
         async let filteredResult: () = fetchEmailView(.filtered, client: client)
+        async let allInboxesResult: () = fetchEmailView(.allInboxes, client: client)
         async let digestResult: () = fetchLatestDigest(client: client)
         async let recsResult: () = fetchRecommendations(client: client)
 
-        _ = await (accountsResult, actionResult, readingResult, filteredResult, digestResult, recsResult)
+        _ = await (accountsResult, actionResult, readingResult, filteredResult, allInboxesResult, digestResult, recsResult)
     }
 
     private func fetchAccounts(client: APIClient) async {

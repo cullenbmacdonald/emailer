@@ -45,6 +45,9 @@ public final class AppState {
     /// Whether a new digest is available (shows "NEW" indicator).
     public var hasNewDigest: Bool = false
 
+    /// Whether the digest sheet is presented (iOS).
+    public var showDigestSheet: Bool = false
+
     #if os(iOS)
     // MARK: - Tab selection (iPhone)
 

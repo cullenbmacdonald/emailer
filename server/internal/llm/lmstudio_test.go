@@ -38,8 +38,8 @@ func TestLMStudioProvider_Classify(t *testing.T) {
 		if req.Model != "test-model" {
 			t.Errorf("got model %q, want test-model", req.Model)
 		}
-		if req.ResponseFormat != nil {
-			t.Errorf("expected no response_format, got %+v", req.ResponseFormat)
+		if req.ResponseFormat == nil || req.ResponseFormat.Type != "json_schema" {
+			t.Errorf("expected json_schema response_format, got %+v", req.ResponseFormat)
 		}
 		if len(req.Messages) != 2 {
 			t.Errorf("got %d messages, want 2", len(req.Messages))

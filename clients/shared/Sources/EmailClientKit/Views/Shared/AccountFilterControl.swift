@@ -105,6 +105,7 @@ public struct AccountFilterControl: View {
 
 #if os(iOS)
 /// Toolbar menu button for filtering by email account (iOS).
+/// Kept for backward compatibility; prefer AccountFilterPillBar for inline use.
 public struct AccountFilterMenu: View {
     @Binding public var accountFilter: AccountFilter
 
@@ -157,6 +158,72 @@ public struct AccountFilterMenu: View {
             Image(systemName: "line.3.horizontal.decrease.circle")
                 .accessibilityLabel("Filter by account")
         }
+    }
+}
+
+/// Horizontal scrolling pill bar for filtering by account on iOS.
+/// Uses glass button style per the design system. Active pill is tinted
+/// with the account color. Placed below the navigation title.
+public struct AccountFilterPillBar: View {
+    @Binding public var selection: AccountFilter
+    public let accounts: [AccountMenuItem]
+
+    public init(
+        selection: Binding<AccountFilter>,
+        accounts: [AccountMenuItem] = AccountMenuItem.defaults
+    ) {
+        self._selection = selection
+        self.accounts = accounts
+    }
+
+    public var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.sm) {
+                pillButton(for: .all, label: "All", dotColor: nil)
+
+                ForEach(accounts) { account in
+                    pillButton(
+                        for: .account(id: account.id, name: account.name),
+                        label: account.name,
+                        dotColor: account.color
+                    )
+                }
+            }
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.xs)
+        }
+        .accessibilityLabel("Account filter")
+    }
+
+    private func pillButton(
+        for filter: AccountFilter,
+        label: String,
+        dotColor: Color?
+    ) -> some View {
+        let isActive = selection == filter
+        return Button {
+            withAnimation(.easeOut(duration: 0.15)) {
+                selection = filter
+            }
+        } label: {
+            HStack(spacing: Spacing.xs) {
+                if let dotColor {
+                    Circle()
+                        .fill(dotColor)
+                        .frame(width: 8, height: 8)
+                }
+                Text(label)
+                    .font(.subheadline)
+                    .fontWeight(isActive ? .semibold : .regular)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+        }
+        .buttonStyle(
+            GlassButtonStyle(tint: isActive ? (dotColor ?? .accentColor) : nil)
+        )
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isActive ? .isSelected : [])
     }
 }
 #endif

@@ -13,7 +13,10 @@ import (
 	"github.com/cullenbmacdonald/emailer/internal/classifier"
 	"github.com/cullenbmacdonald/emailer/internal/config"
 	imapmanager "github.com/cullenbmacdonald/emailer/internal/imap"
+	"github.com/cullenbmacdonald/emailer/internal/jobs"
 	"github.com/cullenbmacdonald/emailer/internal/llm"
+	"github.com/cullenbmacdonald/emailer/internal/models"
+	"github.com/cullenbmacdonald/emailer/internal/recommender"
 	"github.com/cullenbmacdonald/emailer/internal/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
@@ -120,8 +123,22 @@ func main() {
 		log.Info().Int("accounts", len(cfg.Accounts)).Msg("accounts synced to database")
 	}
 
+	// Create LLM provider (shared by classification and recommendation extraction).
+	var llmProvider llm.Provider
+	if cfg.LLM.Provider != "" {
+		p, llmErr := llm.NewProvider(cfg.LLM)
+		if llmErr != nil {
+			log.Warn().Err(llmErr).Msg("failed to create LLM provider")
+		} else {
+			llmProvider = p
+			log.Info().Str("provider", cfg.LLM.Provider).Msg("LLM provider configured")
+		}
+	}
+
 	// Create and start IMAP manager (if accounts are configured and DB is available).
 	var imapMgr *imapmanager.Manager
+	var recWorkerCancel context.CancelFunc
+	var newsletterCh chan recommender.EmailInput
 	if len(cfg.Accounts) > 0 {
 		mgr, imapErr := imapmanager.NewManager(cfg.Accounts, log.Logger)
 		if imapErr != nil {
@@ -135,19 +152,38 @@ func main() {
 
 				// Wire up classification pipeline.
 				var llmClassifier classifier.LLMClassifier
-				if cfg.LLM.Provider != "" {
-					provider, llmErr := llm.NewProvider(cfg.LLM)
-					if llmErr != nil {
-						log.Warn().Err(llmErr).Msg("failed to create LLM provider, classification will use rules+features only")
-					} else {
-						llmClassifier = llm.NewClassifierAdapter(provider)
-						log.Info().Str("provider", cfg.LLM.Provider).Msg("LLM provider configured for classification")
-					}
+				if llmProvider != nil {
+					llmClassifier = llm.NewClassifierAdapter(llmProvider)
 				}
 
 				vipStore := storage.NewVIPStore(pool)
 				pipeline := classifier.NewPipeline(&vipAdapter{vipStore}, nil, llmClassifier, log.Logger)
 				syncer.SetClassifier(pipeline)
+
+				// Wire up recommendation extraction for newsletter emails.
+				// The channel and callback are set up now; the worker is started
+				// after the HTTP server is created so the WebSocket hub can be used.
+				if llmProvider != nil {
+					newsletterCh = make(chan recommender.EmailInput, 100)
+
+					syncer.SetNewsletterCallback(func(email *models.Email, textBody string) {
+						input := recommender.EmailInput{
+							EmailID:     email.ID,
+							AccountID:   email.AccountID,
+							Subject:     email.Subject,
+							FromName:    email.From.Name,
+							FromAddress: email.From.Email,
+							TextBody:    textBody,
+							ReceivedAt:  email.ReceivedAt,
+						}
+						select {
+						case newsletterCh <- input:
+						default:
+							log.Warn().Str("email_id", email.ID).Msg("recommendation channel full, dropping newsletter")
+						}
+					})
+				}
+
 				imapMgr.SetSyncer(syncer)
 			}
 
@@ -178,6 +214,19 @@ func main() {
 		BuildTime: buildTime,
 	}, deps)
 
+	// Start recommendation worker now that the WebSocket hub is available.
+	if newsletterCh != nil && pool != nil && llmProvider != nil {
+		emailStore := storage.NewEmailStore(pool)
+		recStore := storage.NewRecommendationStore(pool)
+		extractor := recommender.NewExtractor(llmProvider, recStore, emailStore, srv.Hub(), log.Logger)
+		worker := jobs.NewRecommendationWorker(extractor, newsletterCh, log.Logger)
+
+		var workerCtx context.Context
+		workerCtx, recWorkerCancel = context.WithCancel(context.Background())
+		go worker.Run(workerCtx)
+		log.Info().Msg("recommendation worker started")
+	}
+
 	errCh := srv.Start()
 
 	log.Info().
@@ -195,7 +244,12 @@ func main() {
 		log.Error().Err(err).Msg("server error")
 	}
 
-	// Stop IMAP manager first.
+	// Stop recommendation worker.
+	if recWorkerCancel != nil {
+		recWorkerCancel()
+	}
+
+	// Stop IMAP manager.
 	if imapMgr != nil {
 		imapMgr.Stop()
 	}

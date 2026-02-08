@@ -1,26 +1,35 @@
 import SwiftUI
+import EmailClientKit
 
-/// The detail column for a selected recommendation.
-/// Shows full context, duplicate sources, and action buttons.
-public struct RecommendationDetailView: View {
+#if os(iOS)
+/// Detail view for a recommendation, pushed via NavigationStack on iPhone.
+/// Shows full context, duplicate sources, and action buttons at the bottom.
+struct IOSRecommendationDetailView: View {
+    let recommendationID: String
+
     @Environment(AppState.self) private var appState
     @Environment(RecommendationStore.self) private var store
 
-    public init() {}
-
-    public var body: some View {
+    var body: some View {
         Group {
-            if let detail = store.selectedDetail {
+            if let detail = store.selectedDetail,
+               detail.recommendation.id == recommendationID {
                 detailContent(detail)
-            } else if store.selectedRecommendationID != nil {
+            } else {
                 ProgressView("Loading recommendation...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                EmptyStateView(
-                    iconName: "star",
-                    title: "Select a recommendation",
-                    subtitle: "Choose a recommendation to see its details."
-                )
+            }
+        }
+        .task {
+            await store.loadDetail(for: recommendationID, using: appState.apiClient)
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                if let detail = store.selectedDetail,
+                   detail.recommendation.id == recommendationID {
+                    toolbarActions(detail.recommendation)
+                }
             }
         }
         .overlay(alignment: .bottom) {
@@ -42,20 +51,16 @@ public struct RecommendationDetailView: View {
 
         return ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xl) {
-                // Header
                 headerSection(rec)
 
                 Divider()
 
-                // Context
                 contextSection(detail)
 
                 Divider()
 
-                // Source attribution
                 sourceSection(rec)
 
-                // Duplicate sources
                 if !detail.duplicateSources.isEmpty {
                     Divider()
                     duplicateSourcesSection(detail.duplicateSources)
@@ -63,17 +68,9 @@ public struct RecommendationDetailView: View {
 
                 Divider()
 
-                // Bottom action buttons
                 bottomActions(rec)
             }
-            .padding(Spacing.xxl)
-        }
-        .toolbar {
-            #if os(macOS)
-            ToolbarItemGroup(placement: .automatic) {
-                toolbarActions(rec)
-            }
-            #endif
+            .padding(Spacing.lg)
         }
     }
 
@@ -81,25 +78,21 @@ public struct RecommendationDetailView: View {
 
     private func headerSection(_ rec: Recommendation) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            // Large type icon
             Image(systemName: rec.type.iconName)
                 .font(.system(size: 40))
                 .foregroundStyle(rec.type.color)
 
-            // Title
             Text(rec.title)
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundStyle(.primary)
 
-            // Creator
             if let creator = rec.creator {
                 Text("by \(creator)")
                     .font(.headline)
                     .foregroundStyle(.secondary)
             }
 
-            // Type and status
             HStack(spacing: Spacing.md) {
                 TypeBadge(type: rec.type)
 
@@ -237,37 +230,40 @@ public struct RecommendationDetailView: View {
 
     // MARK: - Toolbar
 
-    #if os(macOS)
     @ViewBuilder
     private func toolbarActions(_ rec: Recommendation) -> some View {
-        Button {
-            Task { await store.updateStatus(id: rec.id, to: .saved, using: appState.apiClient) }
-        } label: {
-            Label("Save", systemImage: "bookmark.fill")
-        }
-
-        Button {
-            Task { await store.updateStatus(id: rec.id, to: .done, using: appState.apiClient) }
-        } label: {
-            Label("Done", systemImage: "checkmark.circle.fill")
-        }
-
-        Button {
-            Task { await store.updateStatus(id: rec.id, to: .dismissed, using: appState.apiClient) }
-        } label: {
-            Label("Dismiss", systemImage: "xmark.circle.fill")
-        }
-
-        if let sourceID = rec.sourceEmailId {
+        Menu {
             Button {
-                appState.selectedView = .allInboxes
-                appState.selectedEmailID = sourceID
+                Task { await store.updateStatus(id: rec.id, to: .saved, using: appState.apiClient) }
             } label: {
-                Label("Open Source", systemImage: "newspaper.fill")
+                Label("Save", systemImage: "bookmark.fill")
             }
+
+            Button {
+                Task { await store.updateStatus(id: rec.id, to: .done, using: appState.apiClient) }
+            } label: {
+                Label("Done", systemImage: "checkmark.circle.fill")
+            }
+
+            Button(role: .destructive) {
+                Task { await store.updateStatus(id: rec.id, to: .dismissed, using: appState.apiClient) }
+            } label: {
+                Label("Dismiss", systemImage: "xmark.circle.fill")
+            }
+
+            if let sourceID = rec.sourceEmailId {
+                Divider()
+                Button {
+                    appState.selectedView = .allInboxes
+                    appState.selectedEmailID = sourceID
+                } label: {
+                    Label("Open Source", systemImage: "newspaper.fill")
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
         }
     }
-    #endif
 
     // MARK: - Helpers
 
@@ -286,13 +282,4 @@ public struct RecommendationDetailView: View {
         }
     }
 }
-
-#Preview("RecommendationDetailView") {
-    let appState = AppState()
-    let store = RecommendationStore()
-
-    RecommendationDetailView()
-        .environment(appState)
-        .environment(store)
-        .frame(width: 500, height: 700)
-}
+#endif

@@ -112,16 +112,20 @@ public struct ContentView: View {
 
     @ViewBuilder
     private var detailColumn: some View {
-        EmailDetailView { action, detail in
-            handleDetailAction(action, detail: detail)
-        }
-        .onChange(of: appState.selectedEmailID) { _, newID in
-            if let id = newID {
-                Task {
-                    await emailStore.loadDetail(for: id, using: appState.apiClient)
+        if appState.selectedView == .recommendations {
+            RecommendationDetailView()
+        } else {
+            EmailDetailView { action, detail in
+                handleDetailAction(action, detail: detail)
+            }
+            .onChange(of: appState.selectedEmailID) { _, newID in
+                if let id = newID {
+                    Task {
+                        await emailStore.loadDetail(for: id, using: appState.apiClient)
+                    }
+                } else {
+                    emailStore.clearDetail()
                 }
-            } else {
-                emailStore.clearDetail()
             }
         }
     }

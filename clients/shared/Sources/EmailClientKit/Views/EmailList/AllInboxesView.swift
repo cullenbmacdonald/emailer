@@ -36,6 +36,11 @@ public struct AllInboxesView: View {
             }
         }
         .navigationTitle("All Inboxes")
+        .task {
+            if emailStore.allInboxes.isEmpty {
+                await refreshAllInboxes()
+            }
+        }
         .searchable(text: $searchText, prompt: "Search all email...")
         .onChange(of: searchText) { _, newValue in
             handleSearchChange(newValue)
@@ -48,10 +53,8 @@ public struct AllInboxesView: View {
             }
         }
         #else
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                AccountFilterMenu(accountFilter: $state.accountFilter)
-            }
+        .safeAreaInset(edge: .top) {
+            AccountFilterPillBar(selection: $state.accountFilter)
         }
         .refreshable {
             await refreshAllInboxes()
@@ -380,7 +383,6 @@ public struct AllInboxesView: View {
 
     // MARK: - Data Loading
 
-    #if os(iOS)
     private func refreshAllInboxes() async {
         guard let client = appState.apiClient else { return }
         emailStore.setLoading(true)
@@ -392,7 +394,6 @@ public struct AllInboxesView: View {
         }
         emailStore.setLoading(false)
     }
-    #endif
 }
 
 // MARK: - All Inboxes Row View
