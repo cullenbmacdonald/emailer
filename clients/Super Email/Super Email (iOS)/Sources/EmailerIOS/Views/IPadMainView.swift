@@ -39,11 +39,36 @@ struct IPadMainView: View {
 
     @ViewBuilder
     private var detailColumn: some View {
-        ContentUnavailableView(
-            "Select an Email",
-            systemImage: "envelope.open",
-            description: Text("Choose an email to read it")
-        )
+        EmailDetailView { action, detail in
+            handleDetailAction(action, detail: detail)
+        }
+        .onChange(of: appState.selectedEmailID) { _, newID in
+            if let id = newID {
+                Task {
+                    await emailStore.loadDetail(for: id, using: appState.apiClient)
+                }
+            } else {
+                emailStore.clearDetail()
+            }
+        }
+    }
+
+    private func handleDetailAction(_ action: DetailAction, detail: EmailDetail) {
+        switch action {
+        case .archive:
+            guard let emailID = appState.selectedEmailID else { return }
+            Task {
+                _ = try? await appState.apiClient?.updateEmail(id: emailID, isArchived: true)
+            }
+        case .trash:
+            guard let emailID = appState.selectedEmailID else { return }
+            Task {
+                try? await appState.apiClient?.deleteEmail(id: emailID)
+            }
+        case .reply, .replyAll, .forward, .snooze, .move:
+            // Will be wired in later tasks
+            break
+        }
     }
 
     @ViewBuilder

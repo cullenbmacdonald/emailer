@@ -105,6 +105,51 @@ public final class EmailActionHandler {
         showSnoozePicker = true
     }
 
+    /// Complete a snooze: remove the email optimistically, call the API,
+    /// and show an undo toast with the snooze time.
+    public func snooze(
+        emailID: String,
+        until date: Date,
+        emailStore: EmailStore,
+        apiClient: APIClient?
+    ) {
+        showSnoozePicker = false
+        snoozeTargetEmailID = nil
+
+        // Optimistic removal
+        let removedEmail = emailStore.removeFromActionQueue(id: emailID)
+
+        let formatter = DateFormatter()
+        formatter.doesRelativeDateFormatting = true
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        let timeString = formatter.string(from: date)
+
+        undoToast = UndoToastInfo(
+            message: "Email snoozed until \(timeString)",
+            undoAction: { [weak emailStore] in
+                if let email = removedEmail {
+                    emailStore?.restoreToActionQueue(email)
+                }
+                // Cancel the snooze on the server
+                Task {
+                    _ = try? await apiClient?.unsnoozeEmail(id: emailID)
+                }
+            }
+        )
+
+        Task {
+            do {
+                _ = try await apiClient?.snoozeEmail(id: emailID, returnAt: date)
+            } catch {
+                // Restore on failure
+                if let email = removedEmail {
+                    emailStore.restoreToActionQueue(email)
+                }
+            }
+        }
+    }
+
     /// Dismiss the undo toast.
     public func dismissUndoToast() {
         undoToast = nil

@@ -154,6 +154,21 @@ func newTestServer(emails EmailStore, classifications ClassificationStore, snooz
 	})
 }
 
+func newTestServerFull(emails EmailStore, classifications ClassificationStore, snoozes SnoozeStore, accounts AccountStore, search SearchStore, recommendations RecommendationStore, digests DigestStore, vip VIPStore, compose ComposeStore, sender EmailSender) *Server { //nolint:unparam // test helper; not all params used in every call site yet
+	return NewServer(":0", nil, testToken, nil, BuildInfo{}, ServerDeps{
+		Emails:          emails,
+		Classifications: classifications,
+		Snoozes:         snoozes,
+		Accounts:        accounts,
+		Search:          search,
+		Recommendations: recommendations,
+		Digests:         digests,
+		VIP:             vip,
+		Compose:         compose,
+		Sender:          sender,
+	})
+}
+
 func authReq(method, url string, body []byte) *http.Request {
 	var req *http.Request
 	if body != nil {

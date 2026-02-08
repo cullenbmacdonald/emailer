@@ -20,6 +20,9 @@ public struct MainTabView: View {
             ) {
                 NavigationStack {
                     ActionQueueView()
+                        .navigationDestination(for: String.self) { emailID in
+                            IOSEmailDetailView(emailID: emailID)
+                        }
                 }
             }
             .badge(appState.actionQueueUnreadCount)

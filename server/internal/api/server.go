@@ -28,6 +28,12 @@ type Server struct {
 	classifications ClassificationStore
 	snoozes         SnoozeStore
 	accounts        AccountStore
+	search          SearchStore
+	recommendations RecommendationStore
+	digests         DigestStore
+	vip             VIPStore
+	compose         ComposeStore
+	sender          EmailSender
 }
 
 // ServerDeps holds optional dependencies for the server.
@@ -37,6 +43,12 @@ type ServerDeps struct {
 	Classifications ClassificationStore
 	Snoozes         SnoozeStore
 	Accounts        AccountStore
+	Search          SearchStore
+	Recommendations RecommendationStore
+	Digests         DigestStore
+	VIP             VIPStore
+	Compose         ComposeStore
+	Sender          EmailSender
 }
 
 // NewServer creates a new HTTP server with all routes and middleware wired up.
@@ -53,6 +65,12 @@ func NewServer(addr string, pool *pgxpool.Pool, authToken string, corsOrigins []
 		s.classifications = d.Classifications
 		s.snoozes = d.Snoozes
 		s.accounts = d.Accounts
+		s.search = d.Search
+		s.recommendations = d.Recommendations
+		s.digests = d.Digests
+		s.vip = d.VIP
+		s.compose = d.Compose
+		s.sender = d.Sender
 	}
 
 	router := s.routes(authToken, corsOrigins)
