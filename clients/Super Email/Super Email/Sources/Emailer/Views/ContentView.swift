@@ -10,13 +10,17 @@ import EmailClientKit
 public struct ContentView: View {
     @Environment(AppState.self) private var appState
     @Environment(EmailStore.self) private var emailStore
+    @Environment(RecommendationStore.self) private var recommendationStore
     @Environment(DigestStore.self) private var digestStore
     @Environment(FocusCoordinator.self) private var focusCoordinator
+
+    @State private var actionHandler = EmailActionHandler()
 
     public init() {}
 
     public var body: some View {
         @Bindable var state = appState
+        @Bindable var handler = actionHandler
 
         ZStack {
             NavigationSplitView(
@@ -54,6 +58,33 @@ public struct ContentView: View {
             }
             #endif
         }
+        .popover(isPresented: $handler.showSnoozePicker) {
+            SnoozePickerView(
+                onSnooze: { date in
+                    if let emailID = actionHandler.snoozeTargetEmailID {
+                        actionHandler.snooze(
+                            emailID: emailID,
+                            until: date,
+                            emailStore: emailStore,
+                            apiClient: appState.apiClient
+                        )
+                    }
+                },
+                onDismiss: {
+                    actionHandler.showSnoozePicker = false
+                    actionHandler.snoozeTargetEmailID = nil
+                }
+            )
+        }
+        .overlay(alignment: .bottom) {
+            if let toast = actionHandler.undoToast {
+                UndoToast(
+                    message: toast.message,
+                    onUndo: toast.undoAction,
+                    onDismiss: { actionHandler.dismissUndoToast() }
+                )
+            }
+        }
     }
 
     @ViewBuilder
@@ -62,8 +93,16 @@ public struct ContentView: View {
             switch destination {
             case .actionQueue:
                 ActionQueueView()
-            default:
+            case .readingQueue:
                 PlaceholderListView(destination: destination)
+            case .filtered:
+                FilteredView()
+            case .allInboxes:
+                AllInboxesView()
+            case .recommendations:
+                RecommendationListView()
+            case .dailyDigest:
+                DigestView()
             }
         } else {
             Text("Select a view from the sidebar")
@@ -106,29 +145,32 @@ public struct ContentView: View {
         }
     }
 
-    // MARK: - Action Handlers (stubs wired to keyboard + toolbar)
+    // MARK: - Action Handlers
 
     private func handleReply() {
-        // Will open compose with reply context (M-2.6)
+        NotificationCenter.default.post(name: .composeNewEmail, object: "reply")
     }
 
     private func handleReplyAll() {
-        // Will open compose with reply-all context (M-2.6)
+        NotificationCenter.default.post(name: .composeNewEmail, object: "replyAll")
     }
 
     private func handleForward() {
-        // Will open compose with forward context (M-2.6)
+        NotificationCenter.default.post(name: .composeNewEmail, object: "forward")
     }
 
     private func handleArchive() {
         guard let emailID = appState.selectedEmailID else { return }
-        Task {
-            _ = try? await appState.apiClient?.updateEmail(id: emailID, isArchived: true)
-        }
+        actionHandler.archive(
+            emailID: emailID,
+            emailStore: emailStore,
+            apiClient: appState.apiClient
+        )
     }
 
     private func handleSnooze() {
-        // Will open snooze picker (M-2.5)
+        guard let emailID = appState.selectedEmailID else { return }
+        actionHandler.beginSnooze(emailID: emailID)
     }
 
     private func handleMove() {
@@ -137,17 +179,22 @@ public struct ContentView: View {
 
     private func handleTrash() {
         guard let emailID = appState.selectedEmailID else { return }
-        Task {
-            try? await appState.apiClient?.deleteEmail(id: emailID)
-        }
+        actionHandler.trash(
+            emailID: emailID,
+            emailStore: emailStore,
+            apiClient: appState.apiClient
+        )
     }
 
     private func handleToggleRead() {
         guard let emailID = appState.selectedEmailID,
               let detail = emailStore.selectedDetail else { return }
-        Task {
-            _ = try? await appState.apiClient?.updateEmail(id: emailID, isRead: !detail.email.isRead)
-        }
+        actionHandler.toggleRead(
+            emailID: emailID,
+            isCurrentlyRead: detail.email.isRead,
+            emailStore: emailStore,
+            apiClient: appState.apiClient
+        )
     }
 
     private func handleCompose() {

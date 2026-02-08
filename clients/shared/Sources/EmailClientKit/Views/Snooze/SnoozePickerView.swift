@@ -57,6 +57,7 @@ public struct SnoozePickerView: View {
         }
         .padding(.bottom, Spacing.sm)
         .frame(width: 260)
+        .glassEffect(surface: .snoozePicker, tint: .snooze)
         #if os(macOS)
         .onKeyPress("1") { selectPreset(0); return .handled }
         .onKeyPress("2") { selectPreset(1); return .handled }

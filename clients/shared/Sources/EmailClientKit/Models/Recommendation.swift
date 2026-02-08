@@ -61,6 +61,24 @@ public struct Recommendation: Codable, Identifiable, Sendable, Equatable {
         self.isUserAdded = isUserAdded
         self.createdAt = createdAt
     }
+
+    /// Return a copy with a different status.
+    public func withStatus(_ newStatus: RecommendationStatus) -> Recommendation {
+        Recommendation(
+            id: id,
+            type: type,
+            title: title,
+            creator: creator,
+            sourceNewsletterName: sourceNewsletterName,
+            sourceEmailId: sourceEmailId,
+            sourceDate: sourceDate,
+            contextSnippet: contextSnippet,
+            status: newStatus,
+            duplicateCount: duplicateCount,
+            isUserAdded: isUserAdded,
+            createdAt: createdAt
+        )
+    }
 }
 
 /// Detail view of a recommendation with duplicate sources.

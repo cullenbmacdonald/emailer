@@ -22,27 +22,23 @@ public struct DetailToolbar: View {
 
     public var body: some View {
         HStack(spacing: Spacing.sm) {
-            // Reply group
-            Group {
+            // Reply group -- morphs as connected glass group
+            GlassToolbarGroup {
                 toolbarButton("Reply", icon: "arrowshape.turn.up.left", action: .reply)
                 toolbarButton("Reply All", icon: "arrowshape.turn.up.left.2", action: .replyAll)
                 toolbarButton("Forward", icon: "arrowshape.turn.up.right", action: .forward)
             }
 
-            Divider()
-                .frame(height: 20)
-
-            // Action group
-            Group {
+            // Action group -- morphs as connected glass group
+            GlassToolbarGroup {
                 toolbarButton("Archive", icon: "archivebox", action: .archive)
                 toolbarButton("Snooze", icon: "clock", action: .snooze)
                 toolbarButton("Move", icon: "folder", action: .move)
             }
 
-            Divider()
-                .frame(height: 20)
-
+            // Trash -- standalone glass button
             toolbarButton("Trash", icon: "trash", action: .trash, tint: .destructive)
+                .buttonStyle(.glass(tint: .destructive))
         }
     }
 
@@ -59,6 +55,8 @@ public struct DetailToolbar: View {
             Label(label, systemImage: icon)
                 .labelStyle(.iconOnly)
                 .foregroundStyle(tint ?? .primary)
+                .padding(.horizontal, Spacing.xs)
+                .padding(.vertical, Spacing.xs)
         }
         .buttonStyle(.borderless)
         .help(label)

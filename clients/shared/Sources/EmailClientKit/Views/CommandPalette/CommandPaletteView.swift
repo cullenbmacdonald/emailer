@@ -64,8 +64,7 @@ public struct CommandPaletteView: View {
             }
         }
         .frame(width: 500)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
         .onAppear {
             searchText = ""

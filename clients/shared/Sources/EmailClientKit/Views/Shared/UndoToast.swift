@@ -68,7 +68,7 @@ public struct UndoToast: View {
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.sm)
-        .background(.regularMaterial, in: .capsule)
+        .background(.ultraThinMaterial, in: .capsule)
         .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
         #if os(iOS)
         .padding(.horizontal, Spacing.lg)

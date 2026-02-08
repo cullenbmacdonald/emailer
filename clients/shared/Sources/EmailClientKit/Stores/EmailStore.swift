@@ -140,6 +140,22 @@ public final class EmailStore {
         upsert(email, into: &allInboxes)
     }
 
+    /// Remove an email from the filtered list (for optimistic rescue/confirm/delete).
+    /// Returns the removed email so it can be restored on undo.
+    @discardableResult
+    public func removeFromFiltered(id: String) -> Email? {
+        guard let index = filtered.firstIndex(where: { $0.id == id }) else { return nil }
+        let email = filtered.remove(at: index)
+        allInboxes.removeAll { $0.id == id }
+        return email
+    }
+
+    /// Restore a previously removed email to the filtered list (for undo).
+    public func restoreToFiltered(_ email: Email) {
+        upsert(email, into: &filtered)
+        upsert(email, into: &allInboxes)
+    }
+
     /// Update the read state of an email across all lists.
     public func updateReadState(id: String, isRead: Bool) {
         updateField(id: id, in: &actionQueue) { $0.withReadState(isRead) }

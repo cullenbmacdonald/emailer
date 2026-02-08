@@ -28,6 +28,12 @@ public final class AppState {
     /// A user-facing error message, if any.
     public var errorMessage: String?
 
+    /// Number of offline actions pending sync.
+    public var pendingActionCount: Int = 0
+
+    /// Whether the app is currently offline (not connected to server).
+    public var isOffline: Bool { !isConnected }
+
     // MARK: - Badge counts
 
     /// Unread count for the Action Queue badge.
