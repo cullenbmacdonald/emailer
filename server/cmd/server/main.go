@@ -12,12 +12,13 @@ import (
 	"github.com/cullenbmacdonald/emailer/internal/api"
 	"github.com/cullenbmacdonald/emailer/internal/classifier"
 	"github.com/cullenbmacdonald/emailer/internal/config"
+	"github.com/cullenbmacdonald/emailer/internal/digest"
 	imapmanager "github.com/cullenbmacdonald/emailer/internal/imap"
 	"github.com/cullenbmacdonald/emailer/internal/jobs"
 	"github.com/cullenbmacdonald/emailer/internal/llm"
 	"github.com/cullenbmacdonald/emailer/internal/models"
-	"github.com/cullenbmacdonald/emailer/internal/digest"
 	"github.com/cullenbmacdonald/emailer/internal/recommender"
+	smtpsender "github.com/cullenbmacdonald/emailer/internal/smtp"
 	"github.com/cullenbmacdonald/emailer/internal/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
@@ -206,6 +207,8 @@ func main() {
 			Recommendations: storage.NewRecommendationStore(pool),
 			Digests:         storage.NewDigestStore(pool),
 			VIP:             storage.NewVIPStore(pool),
+			Compose:         storage.NewDraftStore(pool),
+			Sender:          smtpsender.NewSender(cfg.Accounts, log.Logger),
 		}
 	}
 

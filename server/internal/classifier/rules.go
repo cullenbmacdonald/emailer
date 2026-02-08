@@ -93,13 +93,20 @@ func (r *RulesClassifier) Classify(ctx context.Context, input *EmailInput) *Clas
 		}
 	}
 
-	// Rule 2: Known newsletter domain + List-Unsubscribe -> newsletter
-	if input.ListUnsubscribe != "" && isKnownNewsletterDomain(input.From.Email) {
+	// Rule 2: Known newsletter domain -> newsletter
+	// These domains exclusively send newsletters, so List-Unsubscribe is not required.
+	if isKnownNewsletterDomain(input.From.Email) {
+		reason := "known newsletter domain"
+		conf := 0.95
+		if input.ListUnsubscribe != "" {
+			reason = "known newsletter domain with List-Unsubscribe"
+			conf = 0.99
+		}
 		return &ClassificationResult{
 			Classification: models.ClassNewsletter,
-			Confidence:     0.99,
+			Confidence:     conf,
 			ClassifiedBy:   models.ClassifiedByRules,
-			Reason:         "known newsletter domain with List-Unsubscribe",
+			Reason:         reason,
 		}
 	}
 

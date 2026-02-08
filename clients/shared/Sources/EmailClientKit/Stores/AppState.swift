@@ -48,6 +48,15 @@ public final class AppState {
     /// Whether the digest sheet is presented (iOS).
     public var showDigestSheet: Bool = false
 
+    /// Whether the compose sheet is presented.
+    public var showComposeSheet: Bool = false
+
+    /// The compose mode for the currently presented compose sheet.
+    public var composeMode: ComposeMode?
+
+    /// All email accounts fetched from the server.
+    public var accounts: [Account] = []
+
     #if os(iOS)
     // MARK: - Tab selection (iPhone)
 

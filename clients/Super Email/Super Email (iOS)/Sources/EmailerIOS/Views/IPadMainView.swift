@@ -7,6 +7,7 @@ struct IPadMainView: View {
     @Environment(AppState.self) private var appState
     @Environment(EmailStore.self) private var emailStore
     @Environment(DigestStore.self) private var digestStore
+    @State private var composeStore: ComposeStore?
 
     var body: some View {
         @Bindable var appState = appState
@@ -29,6 +30,13 @@ struct IPadMainView: View {
         }
         }
         .animation(.easeInOut(duration: 0.3), value: appState.isOffline)
+        .sheet(item: $composeStore) { store in
+            ComposeView(
+                store: store,
+                accounts: appState.accounts,
+                apiClient: appState.apiClient
+            )
+        }
     }
 
     @ViewBuilder
@@ -72,8 +80,15 @@ struct IPadMainView: View {
             Task {
                 try? await appState.apiClient?.deleteEmail(id: emailID)
             }
-        case .reply, .replyAll, .forward, .snooze, .move:
-            // Will be wired in later tasks
+        case .reply:
+            let selfEmail = appState.accounts.first(where: { $0.id == detail.email.accountId })?.emailAddress
+            composeStore = ComposeStore(mode: .reply(detail), selfEmail: selfEmail, defaultAccountID: appState.accounts.first?.id)
+        case .replyAll:
+            let selfEmail = appState.accounts.first(where: { $0.id == detail.email.accountId })?.emailAddress
+            composeStore = ComposeStore(mode: .replyAll(detail), selfEmail: selfEmail, defaultAccountID: appState.accounts.first?.id)
+        case .forward:
+            composeStore = ComposeStore(mode: .forward(detail), defaultAccountID: appState.accounts.first?.id)
+        case .snooze, .move:
             break
         }
     }

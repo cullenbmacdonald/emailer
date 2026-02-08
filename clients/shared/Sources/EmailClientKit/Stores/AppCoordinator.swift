@@ -28,6 +28,9 @@ public final class AppCoordinator {
     public internal(set) var apiClient: APIClient?
     public private(set) var webSocketManager: WebSocketManager?
 
+    /// All email accounts fetched from the server.
+    public private(set) var accounts: [Account] = []
+
     private var eventRoutingTask: Task<Void, Never>?
     private var reconnectionTask: Task<Void, Never>?
     private let logger = Logger(subsystem: "com.cullenbmacdonald.emailer", category: "AppCoordinator")
@@ -306,8 +309,10 @@ public final class AppCoordinator {
 
     private func fetchAccounts(client: APIClient) async {
         do {
-            _ = try await client.fetchAccounts()
-            logger.info("Fetched accounts")
+            let fetched = try await client.fetchAccounts()
+            accounts = fetched
+            appState.accounts = fetched
+            logger.info("Fetched \(fetched.count) accounts")
         } catch {
             logger.warning("Failed to fetch accounts: \(error.localizedDescription)")
         }

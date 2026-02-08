@@ -15,6 +15,7 @@ public struct ContentView: View {
     @Environment(FocusCoordinator.self) private var focusCoordinator
 
     @State private var actionHandler = EmailActionHandler()
+    @State private var composeStore: ComposeStore?
 
     public init() {}
 
@@ -85,6 +86,16 @@ public struct ContentView: View {
                 )
             }
         }
+        .sheet(item: $composeStore) { store in
+            ComposeView(
+                store: store,
+                accounts: appState.accounts,
+                apiClient: appState.apiClient
+            )
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .composeNewEmail)) { notification in
+            presentCompose(from: notification)
+        }
     }
 
     @ViewBuilder
@@ -152,15 +163,18 @@ public struct ContentView: View {
     // MARK: - Action Handlers
 
     private func handleReply() {
-        NotificationCenter.default.post(name: .composeNewEmail, object: "reply")
+        guard let detail = emailStore.selectedDetail else { return }
+        presentComposeWithMode(.reply(detail))
     }
 
     private func handleReplyAll() {
-        NotificationCenter.default.post(name: .composeNewEmail, object: "replyAll")
+        guard let detail = emailStore.selectedDetail else { return }
+        presentComposeWithMode(.replyAll(detail))
     }
 
     private func handleForward() {
-        NotificationCenter.default.post(name: .composeNewEmail, object: "forward")
+        guard let detail = emailStore.selectedDetail else { return }
+        presentComposeWithMode(.forward(detail))
     }
 
     private func handleArchive() {
@@ -202,7 +216,21 @@ public struct ContentView: View {
     }
 
     private func handleCompose() {
-        NotificationCenter.default.post(name: .composeNewEmail, object: nil)
+        presentComposeWithMode(.new)
+    }
+
+    private func presentComposeWithMode(_ mode: ComposeMode) {
+        let selfEmail = appState.accounts.first(where: { $0.id == emailStore.selectedDetail?.email.accountId })?.emailAddress
+        composeStore = ComposeStore(
+            mode: mode,
+            selfEmail: selfEmail,
+            defaultAccountID: appState.accounts.first?.id
+        )
+    }
+
+    private func presentCompose(from notification: Notification) {
+        // Notification from Cmd+N menu command
+        presentComposeWithMode(.new)
     }
 
     private func handleSearch() {

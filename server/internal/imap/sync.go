@@ -133,8 +133,8 @@ func (s *EmailSyncer) SyncFolder(ctx context.Context, client *imapclient.Client,
 			} else {
 				logger.Info().Str("email_id", stored.ID).Str("class", cr.Classification).Float64("confidence", cr.Confidence).Msg("classified")
 
-				// Queue newsletter emails for recommendation extraction.
-				if cr.Classification == models.ClassNewsletter && s.onNewsletter != nil {
+				// Queue all emails for recommendation extraction.
+				if s.onNewsletter != nil {
 					s.onNewsletter(stored, fr.TextBody)
 				}
 			}

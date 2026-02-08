@@ -38,13 +38,14 @@ func TestRulesClassifier_NewsletterDomain(t *testing.T) {
 		from            string
 		listUnsubscribe string
 		wantMatch       bool
+		wantConfidence  float64
 	}{
-		{"substack with unsubscribe", "news@substack.com", "<mailto:unsub>", true},
-		{"substack subdomain", "news@letters.substack.com", "<mailto:unsub>", true},
-		{"substack without unsubscribe", "news@substack.com", "", false},
-		{"unknown domain with unsubscribe", "news@example.com", "<mailto:unsub>", false},
-		{"beehiiv", "digest@beehiiv.com", "<mailto:unsub>", true},
-		{"mailchimp subdomain", "noreply@mail.mailchimp.com", "<mailto:unsub>", true},
+		{"substack with unsubscribe", "news@substack.com", "<mailto:unsub>", true, 0.99},
+		{"substack subdomain", "news@letters.substack.com", "<mailto:unsub>", true, 0.99},
+		{"substack without unsubscribe", "news@substack.com", "", true, 0.95},
+		{"unknown domain with unsubscribe", "news@example.com", "<mailto:unsub>", false, 0},
+		{"beehiiv", "digest@beehiiv.com", "<mailto:unsub>", true, 0.99},
+		{"mailchimp subdomain", "noreply@mail.mailchimp.com", "<mailto:unsub>", true, 0.99},
 	}
 
 	for _, tt := range tests {
@@ -62,8 +63,8 @@ func TestRulesClassifier_NewsletterDomain(t *testing.T) {
 				if result.Classification != models.ClassNewsletter {
 					t.Errorf("got %s, want newsletter", result.Classification)
 				}
-				if result.Confidence != 0.99 {
-					t.Errorf("got confidence %f, want 0.99", result.Confidence)
+				if result.Confidence != tt.wantConfidence {
+					t.Errorf("got confidence %f, want %f", result.Confidence, tt.wantConfidence)
 				}
 			} else if result != nil && result.Classification == models.ClassNewsletter {
 				t.Error("did not expect newsletter classification")

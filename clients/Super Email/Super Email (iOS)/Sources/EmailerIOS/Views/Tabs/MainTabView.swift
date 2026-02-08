@@ -9,6 +9,7 @@ import EmailClientKit
 public struct MainTabView: View {
     @Environment(AppState.self) private var appState
     @Environment(DigestStore.self) private var digestStore
+    @State private var composeStore: ComposeStore?
 
     public init() {}
 
@@ -82,6 +83,13 @@ public struct MainTabView: View {
             DigestSheetView()
                 .environment(appState as AppState)
                 .environment(digestStore as DigestStore)
+        }
+        .sheet(item: $composeStore) { store in
+            ComposeView(
+                store: store,
+                accounts: appState.accounts,
+                apiClient: appState.apiClient
+            )
         }
     }
 
