@@ -69,7 +69,7 @@ func (l *LMStudioProvider) Classify(ctx context.Context, req ClassifyRequest) (*
 			{Role: "user", Content: prompt},
 		},
 		Temperature:    0.1,
-		ResponseFormat: &openAIRespFormat{Type: "json_object"},
+		// LM Studio doesn't support json_object; rely on structured output parser.
 	}
 
 	content, err := l.doChat(ctx, chatReq)
@@ -90,7 +90,7 @@ func (l *LMStudioProvider) ExtractRecommendations(ctx context.Context, req Extra
 			{Role: "user", Content: prompt},
 		},
 		Temperature:    0.2,
-		ResponseFormat: &openAIRespFormat{Type: "json_object"},
+		// LM Studio doesn't support json_object; rely on structured output parser.
 	}
 
 	content, err := l.doChat(ctx, chatReq)

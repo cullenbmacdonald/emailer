@@ -13,6 +13,7 @@ import (
 	"github.com/cullenbmacdonald/emailer/internal/classifier"
 	"github.com/cullenbmacdonald/emailer/internal/config"
 	imapmanager "github.com/cullenbmacdonald/emailer/internal/imap"
+	"github.com/cullenbmacdonald/emailer/internal/llm"
 	"github.com/cullenbmacdonald/emailer/internal/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
@@ -131,8 +132,21 @@ func main() {
 			// Wire up the email syncer if we have a database connection.
 			if pool != nil {
 				syncer := imapmanager.NewEmailSyncer(pool, log.Logger)
-				// Wire up classification pipeline (rules + features, no LLM for now).
-				pipeline := classifier.NewPipeline(nil, nil, nil, log.Logger)
+
+				// Wire up classification pipeline.
+				var llmClassifier classifier.LLMClassifier
+				if cfg.LLM.Provider != "" {
+					provider, llmErr := llm.NewProvider(cfg.LLM)
+					if llmErr != nil {
+						log.Warn().Err(llmErr).Msg("failed to create LLM provider, classification will use rules+features only")
+					} else {
+						llmClassifier = llm.NewClassifierAdapter(provider)
+						log.Info().Str("provider", cfg.LLM.Provider).Msg("LLM provider configured for classification")
+					}
+				}
+
+				vipStore := storage.NewVIPStore(pool)
+				pipeline := classifier.NewPipeline(&vipAdapter{vipStore}, nil, llmClassifier, log.Logger)
 				syncer.SetClassifier(pipeline)
 				imapMgr.SetSyncer(syncer)
 			}
@@ -201,6 +215,15 @@ func main() {
 	}
 
 	log.Info().Msg("server stopped")
+}
+
+// vipAdapter wraps storage.VIPStore to implement classifier.VIPChecker.
+type vipAdapter struct {
+	store *storage.VIPStore
+}
+
+func (a *vipAdapter) IsVIP(ctx context.Context, email string) (bool, error) {
+	return a.store.IsVIPSender(ctx, email)
 }
 
 // parseDuration parses a duration string, returning the fallback on error.
