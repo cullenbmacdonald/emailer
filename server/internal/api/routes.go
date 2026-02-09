@@ -82,6 +82,7 @@ func (s *Server) routes(authToken string, corsOrigins []string) *chi.Mux {
 			r.Get("/digests/latest", s.handleGetLatestDigest())
 			r.Get("/digests/{id}", s.handleGetDigest())
 			r.Patch("/digests/{id}", s.handleUpdateDigest())
+			r.Post("/digests/generate", s.handleGenerateDigest())
 		}
 
 		// VIP endpoints

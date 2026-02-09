@@ -36,6 +36,7 @@ type Server struct {
 	vip             VIPStore
 	compose         ComposeStore
 	sender          EmailSender
+	digestGenerator DigestGenerator
 }
 
 // ServerDeps holds optional dependencies for the server.
@@ -51,6 +52,7 @@ type ServerDeps struct {
 	VIP             VIPStore
 	Compose         ComposeStore
 	Sender          EmailSender
+	DigestGenerator DigestGenerator
 }
 
 // NewServer creates a new HTTP server with all routes and middleware wired up.
@@ -74,6 +76,7 @@ func NewServer(addr string, pool *pgxpool.Pool, authToken string, corsOrigins []
 		s.vip = d.VIP
 		s.compose = d.Compose
 		s.sender = d.Sender
+		s.digestGenerator = d.DigestGenerator
 	}
 
 	router := s.routes(authToken, corsOrigins)
@@ -106,6 +109,11 @@ func (s *Server) Start() <-chan error {
 // Hub returns the WebSocket hub for broadcasting events.
 func (s *Server) Hub() *Hub {
 	return s.hub
+}
+
+// SetDigestGenerator sets the digest generator for on-demand generation.
+func (s *Server) SetDigestGenerator(g DigestGenerator) {
+	s.digestGenerator = g
 }
 
 // Shutdown gracefully stops the server with the given context deadline.

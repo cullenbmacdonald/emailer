@@ -19,6 +19,31 @@ public struct DigestView: View {
             }
         }
         .navigationTitle("Daily Digest")
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Menu {
+                    Button {
+                        Task {
+                            guard let client = appState.apiClient else { return }
+                            await digestStore.generateDigest(type: .morning, using: client)
+                        }
+                    } label: {
+                        Label("Morning Digest", systemImage: "sun.horizon")
+                    }
+                    Button {
+                        Task {
+                            guard let client = appState.apiClient else { return }
+                            await digestStore.generateDigest(type: .evening, using: client)
+                        }
+                    } label: {
+                        Label("Evening Digest", systemImage: "moon.stars")
+                    }
+                } label: {
+                    Label("Generate Digest", systemImage: "arrow.clockwise")
+                }
+                .help("Generate digest now")
+            }
+        }
         .onAppear {
             digestStore.markAsRead()
         }

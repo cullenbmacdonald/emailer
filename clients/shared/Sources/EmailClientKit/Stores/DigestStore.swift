@@ -124,6 +124,21 @@ public final class DigestStore {
         isLoading = false
     }
 
+    /// Generate a digest on demand.
+    public func generateDigest(type: DigestType, using client: APIClient) async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            let digest = try await client.generateDigest(type: type)
+            latestDigest = digest
+            currentDigest = digest
+            dismissedItemIDs.removeAll()
+        } catch {
+            errorMessage = "Failed to generate digest"
+        }
+        isLoading = false
+    }
+
     /// Confirm a borderline item as spam.
     public func confirmSpam(emailID: String, using client: APIClient) async {
         dismissItem(emailID)

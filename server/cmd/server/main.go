@@ -235,6 +235,7 @@ func main() {
 	digestData := digest.NewPgDataSource(pool)
 	digestSaver := storage.NewDigestStore(pool)
 	digestGen := digest.NewGenerator(digestData, digestSaver, srv.Hub())
+	srv.SetDigestGenerator(digestGen)
 	digestScheduler, err := digest.NewScheduler(digest.SchedulerConfig{
 		MorningTime: cfg.Digest.MorningTime,
 		EveningTime: cfg.Digest.EveningTime,

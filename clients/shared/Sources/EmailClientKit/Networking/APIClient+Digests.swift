@@ -36,4 +36,10 @@ extension APIClient {
         let body = DigestUpdateRequest(isRead: isRead)
         return try await request(method: .patch, path: "/api/v1/digests/\(id)", body: body)
     }
+
+    /// Trigger on-demand digest generation.
+    public func generateDigest(type: DigestType) async throws -> DailyDigest {
+        let body = GenerateDigestRequest(type: type.rawValue)
+        return try await request(method: .post, path: "/api/v1/digests/generate", body: body)
+    }
 }

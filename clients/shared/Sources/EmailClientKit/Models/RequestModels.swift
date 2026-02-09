@@ -71,6 +71,15 @@ public struct DigestUpdateRequest: Codable, Sendable, Equatable {
     }
 }
 
+/// Request body for triggering digest generation.
+public struct GenerateDigestRequest: Codable, Sendable, Equatable {
+    public let type: String
+
+    public init(type: String) {
+        self.type = type
+    }
+}
+
 /// Request body for creating a VIP sender.
 public struct VIPCreateRequest: Codable, Sendable, Equatable {
     public let email: String
