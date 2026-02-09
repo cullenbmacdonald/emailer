@@ -7,6 +7,7 @@ const (
 	ProviderGmail     = "gmail"
 	ProviderICloud    = "icloud"
 	ProviderMicrosoft = "microsoft365"
+	ProviderFastmail  = "fastmail"
 )
 
 // Auth method constants.
@@ -63,6 +64,16 @@ func DefaultProviderConfig(provider string) (*ProviderConfig, error) {
 			SMTPHost:                "smtp.office365.com",
 			SMTPPort:                587,
 			AuthMethod:              AuthMethodXOAuth2,
+			AutoSaveSent:            false,
+			SupportsGmailExtensions: false,
+		}, nil
+	case ProviderFastmail:
+		return &ProviderConfig{
+			IMAPHost:                "imap.fastmail.com",
+			IMAPPort:                993,
+			SMTPHost:                "smtp.fastmail.com",
+			SMTPPort:                587,
+			AuthMethod:              AuthMethodPlain,
 			AutoSaveSent:            false,
 			SupportsGmailExtensions: false,
 		}, nil
